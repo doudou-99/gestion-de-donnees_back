@@ -14,17 +14,185 @@ datasource db {
 }
 
 model User {
-  id    Int     @default(autoincrement()) @id
-  email String  @unique
-  name  String?
-  posts Post[]
+  id                      Int                   @id @default(autoincrement()) 
+  fistname                String
+  lastname                String
+  email                   String                @unique
+  adress                  String
+  zipCode                 Int
+  createdAt               DateTime              @default(now())
+  file                    File[]  
+fileRequest               FileRequest[]
+  memberGroup             MemberGroup[]
+  messages                Message[]  
+  shares                  Share[]
+  shares_with_users       Share_With_Users[]
+  shares_with_groups      Share_With_Groups[]
+  access_logs             Access_Log[]
+  change_logs             Change_Log[]
 }
 
-model Post {
-  id        Int      @default(autoincrement()) @id
-  title     String
-  content   String?
-  published Boolean? @default(false)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
+
+
+
+model File {
+  id              Int              @id @default(autoincrement()) 
+  name            String           @db.VarChar(255) @unique
+  size            Int?
+  user            User             @relation(fields: [user_id], references: [id])
+  user_id         Int
+
+  type_id         Int
+  edit_file       EditFile
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  version         String?          @db.VarChar(255)
+  filePermission  String?
+  FileRequest     FileRequest[]
+  messages        Contains[]
+  shares          Share[]
+  access_logs     Access_Log[]
+  change_logs     Change_Log[]
+}
+
+enum EditFile {
+  DATEFILE
+  userEDIT
+}
+
+model Group {
+  groupid          Int            @id @default(autoincrement()) 
+  leader           String
+  groupName        String
+  memberGroup      MemberGroup[]
+  fileRequests     FileRequest[]
+  messages         Message[]
+}
+
+model MemberGroup {
+  id        Int       @id @default(autoincrement()) 
+  user      User      @relation(fields: [user_id], references: [id])
+  user_id   Int
+  group     Group     @relation(fields: [group_id], references: [groupid])
+  group_id  Int
+}
+
+model FileRequest {
+  id            Int             @id @default(autoincrement()) 
+  type_request  TypeRequest
+  sender_id     Int
+  sender        User            @relation(fields: [sender_id], references: [id])
+  file_id       Int
+  file          File            @relation(fields: [file_id], references: [id])
+  group_id      Int
+  group         Group           @relation(fields: [group_id], references: [groupid])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime?        @updatedAt
+}
+
+enum TypeRequest {
+  SHARE_FILE
+  JOIN_GROUP
+  ACCESS_FILE
+  DELETE_FILE
+}
+
+model Message {
+  id            Int             @id @default(autoincrement()) 
+  message       String          @db.Text()
+  sender        User            @relation(fields: [sender_id], references: [id])
+  sender_id     Int
+  group_id      Int
+  group         Group           @relation(fields: [group_id], references: [groupid])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime?        @updatedAt
+  files         Contains[]
+}
+
+model Contains {
+  id_message    Int           
+  message       Message         @relation(fields: [id_message], references: [id])
+  id_file       Int      
+  file          File            @relation(fields: [id_file], references: [id])
+  @@id([id_message, id_file])
+}
+
+
+model Share {
+  id                      Int                   @id @default(autoincrement()) 
+  share_url               String                @db.VarChar(255)
+  user_id                 Int             
+  user                    User                  @relation(fields: [user_id], references: [id])
+  file                    File                  @relation(fields: [file_id], references: [id])
+  file_id                 Int            
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime?              @updatedAt
+  shares_with_users       Share_With_Users[]
+  shares_with_groups      Share_With_Groups[]
+}
+  
+
+model Share_With_Users {
+  share_id            Int             
+  share               Share            @relation(fields: [share_id], references: [id])    
+  user_id             Int
+  user                User             @relation(fields: [user_id], references: [id])
+  access_type         AccessType
+  expiration_date     DateTime?
+  status              StatusShare?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime?        @updatedAt
+  @@id([share_id, user_id])
+}
+
+
+model Share_With_Groups {
+  share_id            Int            
+  share               Share           @relation(fields: [share_id], references: [id])    
+  user_id             Int
+  user                User            @relation(fields: [user_id], references: [id])
+  access_type         AccessType
+  expiration_date     DateTime?
+  status              StatusShare?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime?       @updatedAt
+  @@id([share_id, user_id])
+}
+
+enum AccessType {
+  READ
+  WRITE
+}
+
+enum StatusShare {
+  EDITED
+  DELETED
+  ARCHIVED
+}
+
+model Access_Log {
+  id                      Int                   @id @default(autoincrement()) 
+  access_date             DateTime              @default(now())
+  file_id                 Int
+  file                    File                  @relation(fields: [file_id], references: [id])
+  user_id                 Int
+  user                    User                  @relation(fields: [user_id], references: [id])
+  updatedAt               DateTime?             @updatedAt
+}
+
+model Change_Log {
+  id                      Int                   @id @default(autoincrement())
+  numero_version          Int
+  content                 String                @db.Text
+  update_date             DateTime              @updatedAt
+  file_id                 Int
+  file                    File                  @relation(fields: [file_id], references: [id])
+  user_id                 Int
+  user                    User                  @relation(fields: [user_id], references: [id])
+  action_type             ActionType
+}
+
+enum ActionType {
+  RENAME
+  EDIT
 }
