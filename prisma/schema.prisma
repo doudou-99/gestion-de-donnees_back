@@ -22,9 +22,9 @@ model User {
   zipCode                 Int
   createdAt               DateTime              @default(now())
   updatedAt               DateTime              @updatedAt
-  file                    File[]  
-  fileRequest             FileRequest[]
-  memberGroup             MemberGroup[]
+  files                   File[]  
+  fileRequests            FileRequest[]
+  memberGroups            MemberGroup[]
   messages                Message[]  
   shares                  Share[]
   shares_with_users       ShareWithUsers[]
@@ -34,8 +34,14 @@ model User {
   groups                  Group[]
 }
 
-
-
+model Type {
+  id              Int              @id @default(autoincrement()) 
+  typeName        String           @db.VarChar(50)
+  typeDescription String           @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt  
+  files File[]
+}
 
 model File {
   id              Int              @id @default(autoincrement()) 
@@ -44,12 +50,13 @@ model File {
   user            User             @relation(fields: [userId], references: [id])
   userId          Int             
   typeId          Int
+  type            Type             @relation(fields: [typeId], references: [id])
   editFile        EnumEditFile
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   version         String?          @db.VarChar(255)
   filePermission  String?          @db.VarChar(255)
-  FileRequest     FileRequest[]
+  fileRequests    FileRequest[]
   messages        Contains[]
   shares          Share[]
   accessLogs      AccessLog[]
@@ -66,7 +73,7 @@ model Group {
   leaderId                Int
   leader                  User                  @relation(fields: [leaderId], references: [id])
   name                    String                @db.VarChar(50)
-  memberGroup             MemberGroup[]
+  memberGroups            MemberGroup[]
   fileRequests            FileRequest[]
   messages                Message[]
   createdAt               DateTime              @default(now())
@@ -74,11 +81,11 @@ model Group {
 }
 
 model MemberGroup {
-  id        Int       @id @default(autoincrement()) 
   user      User      @relation(fields: [userId], references: [id])
   userId    Int
   group     Group     @relation(fields: [groupId], references: [id])
   groupId   Int
+  @@id([userId, groupId])
 }
 
 model FileRequest {
@@ -95,10 +102,10 @@ model FileRequest {
 }
 
 enum EnumTypeRequest {
-  SHARE_FILE
-  JOIN_GROUP
-  ACCESS_FILE
-  DELETE_FILE
+  SHAREFILE
+  JOINGROUP
+  ACCESSFILE
+  DELETEFILE
 }
 
 model Message {
