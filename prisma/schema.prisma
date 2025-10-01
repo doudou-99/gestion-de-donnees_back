@@ -49,7 +49,7 @@ model Type {
   typeDescription String           @db.Text
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt  
-  files File[]
+  files           File[]
 }
 
 model File {
@@ -174,7 +174,7 @@ model ShareWithGroups {
   expirationDate     DateTime?
   status             EnumStatusShare?
   createdAt          DateTime        @default(now())
-  updatedAt          DateTime?       @updatedAt
+  updatedAt          DateTime        @updatedAt
   @@id([shareId, userId])
 }
 
