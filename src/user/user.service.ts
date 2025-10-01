@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { EnumUserStatus, User } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
+import { AddUserDTO } from 'src/auth/dto/add.user.dto';
 
 @Injectable()
 export class UserService {
@@ -9,6 +10,12 @@ export class UserService {
   async getById(id: number): Promise<User> {
     return await this.prisma.user.findUniqueOrThrow({
       where: { id },
+    });
+  }
+
+  async getByEmail(email: string): Promise<User> {
+    return await this.prisma.user.findUniqueOrThrow({
+      where: { email },
     });
   }
 }
