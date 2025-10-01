@@ -13,6 +13,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum EnumUserStatus {
+  NOT_CONFIRMED
+  CONFIRMED
+  DEACTIVATED
+  BANNED
+}
+
 model User {
   id                      Int                   @id @default(autoincrement()) 
   firstname               String                @db.VarChar(50)
@@ -20,6 +27,7 @@ model User {
   email                   String                @unique() @db.VarChar(50)
   address                 String                @db.VarChar(50)
   zipCode                 Int
+  status                  EnumUserStatus
   createdAt               DateTime              @default(now())
   updatedAt               DateTime              @updatedAt
   files                   File[]  
@@ -32,6 +40,7 @@ model User {
   accessLogs              AccessLog[]
   changeLogs              ChangeLog[]
   groups                  Group[]
+  tokens                  Token[]
 }
 
 model Type {
@@ -128,7 +137,6 @@ model Contains {
   @@id([idMessage, idFile])
 }
 
-
 model Share {
   id                    Int                   @id @default(autoincrement()) 
   shareUrl              String                @db.VarChar(255)
@@ -209,4 +217,21 @@ model ChangeLog {
 enum EnumActionType {
   RENAME
   EDIT
+}
+
+enum EnumTokenType {
+  REFRESHTOKEN
+  ACTIVATEACCOUNT
+  RESETPASSWORD
+}
+
+model Token {
+  token       String
+  type        EnumTokenType
+  userId      Int
+  user        User              @relation(fields: [userId], references: [id])
+  expiresAt   DateTime? 
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  @@id([type, userId])
 }
