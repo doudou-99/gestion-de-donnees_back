@@ -61,8 +61,9 @@ model File {
   user            User             @relation(fields: [userId], references: [id])
   userId          Int             
   typeId          Int
+  url             String           @db.VarChar(255)
   type            Type             @relation(fields: [typeId], references: [id])
-  editFile        EnumEditFile
+  editFile        EnumEditFile?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   version         String?          @db.VarChar(255)
