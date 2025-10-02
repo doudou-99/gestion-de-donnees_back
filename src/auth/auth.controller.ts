@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import {
   Body,
   Controller,
@@ -7,9 +6,6 @@ import {
   Post,
   PreconditionFailedException,
 } from '@nestjs/common';
-=======
-import { Body, Controller, HttpCode, HttpStatus, Post, PreconditionFailedException } from '@nestjs/common';
->>>>>>> 86747aefc0fae243f1c185e4bec6a1356e5ca939
 import { SigninDTO } from './dto/signin.dto';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
