@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { ResponseMessageWithData } from 'src/responses/response.message.with.data';
 import { loginInterface } from "./interface/logininterface";
 
-@Controller('auth')
+@Controller('api/v1/auth')
 export class AuthController {
     constructor(private readonly authService: AuthService, private readonly userService: UserService){}
 
