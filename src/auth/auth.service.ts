@@ -3,7 +3,7 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { PayloadInterface } from './interface/payload.interface';
 import { JwtOptionsInterface } from './interface/jwt.options.interface';
-import { EnumTokenType } from '@prisma/client';
+import { EnumTokenType, Token } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class AuthService {
     }
   }
 
-  async generateToken(payload: PayloadInterface, options: JwtOptionsInterface) {
+  async generateToken(payload: PayloadInterface, options: JwtOptionsInterface): Promise<string> {
     return await this.jwtService.signAsync(payload, options);
   }
 
@@ -38,7 +38,7 @@ export class AuthService {
     token: string,
     type: EnumTokenType = 'REFRESHTOKEN',
     expiresAt?: Date,
-  ) {
+  ): Promise<void> {
     await this.prisma.token.upsert({
       create: {
         token,
@@ -48,6 +48,12 @@ export class AuthService {
       },
       where: { type_userId: { type, userId } },
       update: { token, expiresAt },
+    });
+  }
+
+  async findUniqueToken(userId: number, type: EnumTokenType = "REFRESHTOKEN"): Promise<Token> {
+    return this.prisma.token.findUniqueOrThrow({
+        where: {type_userId: {type, userId}}
     });
   }
 }
