@@ -26,10 +26,17 @@ const upsertUser = async () => {
 };
 
 const main = async (nbUser: number) => {
+<<<<<<< HEAD
   for (let i = 0; i < nbUser; i++) {
     upsertUser();
   }
 };
+=======
+    for (let i = 0; i < nbUser; i++) {
+        await upsertUser();
+    }
+}
+>>>>>>> 86747aefc0fae243f1c185e4bec6a1356e5ca939
 
 main(2)
   .then(async () => {
