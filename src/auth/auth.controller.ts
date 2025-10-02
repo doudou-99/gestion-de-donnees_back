@@ -1,15 +1,4 @@
-<<<<<<< HEAD
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  PreconditionFailedException,
-} from '@nestjs/common';
-=======
 import { Body, Controller, HttpCode, HttpStatus, Post, PreconditionFailedException } from '@nestjs/common';
->>>>>>> 86747aefc0fae243f1c185e4bec6a1356e5ca939
 import { SigninDTO } from './dto/signin.dto';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
@@ -50,33 +39,4 @@ export class AuthController {
             message: "The user is connected"
         }
     }
-    if (!compare) {
-      throw new PreconditionFailedException('Bad credentials');
-    }
-    const login: loginInterface = {
-      id: user.id,
-      email: user.email,
-      password: user.password,
-    };
-    const access_token = await this.authService.generateToken(
-      { sub: user.id },
-      {
-        secret: process.env.SECRET_KEY,
-        expiresIn: '60s',
-      },
-    );
-    const refresh_token = await this.authService.generateToken(
-      { sub: user.id },
-      {
-        algorithm: 'HS512',
-        secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '240s',
-      },
-    );
-    await this.authService.upsertToken(user.id, refresh_token);
-    return {
-      data: { user: login, access_token, refresh_token },
-      message: 'The user is connected',
-    };
-  }
 }
