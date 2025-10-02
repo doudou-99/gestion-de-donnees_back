@@ -25,7 +25,7 @@ const upsertUser = async () => {
 
 const main = async (nbUser: number) => {
     for (let i = 0; i < nbUser; i++) {
-        upsertUser();
+        await upsertUser();
     }
 }
 

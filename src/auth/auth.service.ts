@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, PreconditionFailedException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as argon2 from "argon2";
 import { JwtService } from "@nestjs/jwt";
 import { PayloadInterface } from './interface/payload.interface';

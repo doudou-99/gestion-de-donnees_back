@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, PreconditionFailedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, PreconditionFailedException } from '@nestjs/common';
 import { SigninDTO } from './dto/signin.dto';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
@@ -13,7 +13,7 @@ export class AuthController {
     @Post("signin")
     async signIn(@Body() body: SigninDTO): Promise<ResponseMessageWithData<{user: loginInterface, access_token: string, refresh_token: string}>> {
         const user = await this.userService.getByEmail(body.email);
-        const compare = this.authService.compare(user.password, body.password);
+        const compare = await this.authService.compare(user.password, body.password);
         if (user.status === "NOT_CONFIRMED") {
             throw new PreconditionFailedException();
         }
