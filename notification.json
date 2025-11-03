@@ -1,0 +1,21 @@
+{
+    "recipientId": 1,
+    "recipientType": "user", //group
+    "type": "SHAREFILE", //REMINDER_EXPIRATION | JOINGROUP | ACCESSFILE | DELETEFILE
+    "templateId": 1,
+    "metadata": {
+        "idUser": 1,
+        "idFile": 10
+    },
+    "read": false,
+    "createdAt": "2025-10-28T15:05:00.000Z",
+    "updatedAt": "2025-10-28T15:05:00.000Z",
+    "expiresAt": "2025-11-28T15:05:00.000Z"
+}
+
+//Template
+{
+    "id":1,
+    "type": "SHAREFILE",
+    "message": "Share demand"
+}
