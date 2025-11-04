@@ -45,7 +45,6 @@ model User {
 }
 
 enum EnumStatusFile {
-  HOME
   BIN 
   DELETED 
   ARCHIVED

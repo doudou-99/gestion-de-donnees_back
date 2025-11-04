@@ -16,6 +16,9 @@ import { ResponseMessageWithData } from '../responses/response.message.with.data
 import { loginInterface } from './interface/logininterface';
 import type { RequestPayloadWithRefresh } from './interface/payload.interface';
 import { RefreshTokenGuard } from './guard/refresh.token.guard';
+import { SignupDto } from './dto/signup.dto';
+import { User } from '@prisma/client';
+import express from 'express';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -23,6 +26,34 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly userService: UserService,
   ) {}
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('signup')
+  async signUp(@Body() body: SignupDto): Promise<
+    ResponseMessageWithData<{
+      user: User;
+    }>
+  > {
+    body.password = await this.authService.hash(body.password);
+    const user = await this.userService.create(body);
+
+    //Confirm token
+    const confirm_token = await this.authService.generateToken(
+      { sub: user.id },
+      {
+        secret: process.env.SECRET_CONFIRM_KEY,
+        expiresIn: '60s',
+      }
+    );
+    const hashed = await this.authService.hash(confirm_token);
+    await this.authService.upsertToken(user.id, hashed, "ACTIVATEACCOUNT");
+    await this.authService.sendConfirmEmail(body.email, confirm_token);
+    return {
+      data: { user },
+      message: 'The user is created'
+    };
+  }
+
 
   @HttpCode(HttpStatus.OK)
   @Post('signin')
