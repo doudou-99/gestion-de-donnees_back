@@ -148,4 +148,21 @@ export class NotificationController {
         }),
       );
     }
+
+    @Delete('expired')
+    @UseGuards(AccessTokenGuard)
+    expiredNotifications() {
+      return this.notificationService.deleteExpired().pipe(
+        timeout(5000),
+        catchError((error) => {
+          console.error(`Error deleting expired notifications: ${error.message}`);
+          return throwError(() =>
+            new HttpException(
+              error.message || 'Failed to delete notification',
+              error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+            ),
+          );
+        }),
+      );
+    }
 }

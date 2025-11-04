@@ -64,6 +64,9 @@ public class NotificationsListener {
         dispatcher.subscribe("notification.delete", msg -> {
             this.handleDeleteNotification(msg);
         });
+        dispatcher.subscribe("notification.expiredNotifications", msg -> {
+            this.handleDeleteExpiredNotifications(msg);
+        });
         
         log.info("NATS listeners initialized for notification service");
     }
@@ -331,16 +334,29 @@ public class NotificationsListener {
         }
     }
 
-    //Get recipient information
-    public void getRecipientById(Message msg) {
+    private void handleDeleteExpiredNotifications(Message msg) {
         String payload = new String(msg.getData(), StandardCharsets.UTF_8);
-        String response = "";
+        log.info("Received NATS message on subject 'notifications.expiredNotifications': {}", payload);
         try {
-            response = objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            notificationService.deleteAllExpiredNotif();
+            String responseJson = objectMapper.writeValueAsString(null);
+            log.info("Sending response for 'notification.expiredNotifications': success");
+            if (msg.getReplyTo() != null) {
+                natsConnection.publish(msg.getReplyTo(), responseJson.getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            log.error("Error processing 'notification.expiredNotifications': ", e);
+            if (msg.getReplyTo() != null) {
+                try {
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("error", e.getMessage());
+                    errorResponse.put("status", "error");
+                    String errorJson = objectMapper.writeValueAsString(errorResponse);
+                    natsConnection.publish(msg.getReplyTo(), errorJson.getBytes(StandardCharsets.UTF_8));
+                } catch (Exception ex) {
+                    log.error("Error sending error response", ex);
+                }
+            }
         }
-        natsConnection.publish(msg.getReplyTo(), response.getBytes(StandardCharsets.UTF_8));
-        log.debug("📤 Sent response: " + response);
     }
 }

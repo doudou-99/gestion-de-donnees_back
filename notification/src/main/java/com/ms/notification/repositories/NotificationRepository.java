@@ -1,5 +1,6 @@
 package com.ms.notification.repositories;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -11,4 +12,5 @@ import com.ms.notification.entity.Notification;
 public interface NotificationRepository extends MongoRepository<Notification, String>{
     List<Notification> findAllByRecipientId(int recipientId);
     List<Notification> findAllByReadAndRecipientId(boolean read, int recipientId);
+    void deleteAllByExpiresAtGreaterThanEqual(LocalDateTime dateTime);
 }

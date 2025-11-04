@@ -1,5 +1,6 @@
 package com.ms.notification.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -119,6 +120,10 @@ public class NotificationService {
             log.debug("Notification deleted");
             this.repository.deleteById(id);
         }
+    }
+    
+    public void deleteAllExpiredNotif() {
+        this.repository.deleteAllByExpiresAtGreaterThanEqual(LocalDateTime.now());
     }
 
     public void sendNotification(TypeNotification type, TypeChannel typeChannel, String id, Map<String, Object> content,

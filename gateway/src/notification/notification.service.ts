@@ -43,5 +43,9 @@ export class NotificationService {
 
     delete(id: string): Observable<NotificationResponse> {
         return this.natsClient.send('notification.delete', {id});
+    }
+
+    deleteExpired(): Observable<NotificationResponse> {
+        return this.natsClient.send('notification.expiredNotifications', {});
     } 
 }
