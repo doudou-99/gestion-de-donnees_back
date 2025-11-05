@@ -45,6 +45,7 @@ model User {
 }
 
 enum EnumStatusFile {
+  HOME
   BIN 
   DELETED 
   ARCHIVED
@@ -59,7 +60,7 @@ model File {
   path            String           @db.VarChar(255)
   mimeType        String           @db.VarChar(255)
   status          EnumStatusFile? 
-  shareUrl        String           @db.VarChar(255)  
+  shareUrl        String?          @db.VarChar(255)  
   editFile        EnumEditFile?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -214,6 +215,7 @@ enum EnumTokenType {
   REFRESHTOKEN
   ACTIVATEACCOUNT
   RESETPASSWORD
+  SHARE_TOKEN
 }
 
 model Token {
