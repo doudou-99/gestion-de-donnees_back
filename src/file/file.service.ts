@@ -3,6 +3,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { File } from '@prisma/client';
 import { importDto } from './dto/import.dto';
 
+export type Sort = "name" | "updatedAt";
+export type Order = "ASC" | "DESC";
+
 @Injectable()
 export class FileService {
 
@@ -26,5 +29,51 @@ export class FileService {
         }
         console.log(filesImport);
         return filesImport;
+    }
+
+    async getFiles(userId: number, page?: number, sort?: Sort, limit: number = 10, order: Order = "ASC") {
+        if (page) {
+            if (sort) {
+                let sortFilter = sort === 'name' ? 'name' : "updatedAt";
+                const orderSort= order === "DESC" ? "DESC" : "ASC";
+                console.log([sortFilter], page)
+                return await this.prisma.file.findMany({
+                    skip: (page - 1) * limit,
+                    take: limit,
+                    where: {
+                        userId
+                    },
+                    orderBy: {
+                        [sortFilter]: orderSort.toLowerCase()
+                    }
+                });
+            } else {
+                return await this.prisma.file.findMany({
+                    skip: (page - 1) * limit,
+                    take: limit,
+                    where: {
+                        userId
+                    }
+                });
+            }
+        }
+        if (sort) {
+            let sortFilter = sort === 'name' ? 'name' : "updatedAt";
+            const orderSort= order === "DESC" ? "DESC" : "ASC";
+
+            return await this.prisma.file.findMany({
+                where: {
+                    userId
+                },
+                orderBy: {
+                    [sortFilter]: orderSort.toLowerCase()
+                }
+            });
+        }
+        return await this.prisma.file.findMany({
+            where: {
+                userId
+            }
+        });
     }
 }
