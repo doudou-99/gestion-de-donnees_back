@@ -1,7 +1,10 @@
 import {
     BadRequestException,
   Controller,
+  Get,
+  ParseIntPipe,
   Post,
+  Query,
   Req,
   UploadedFiles,
   UseFilters,
@@ -11,7 +14,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { AccessTokenGuard } from '../auth/guard/access.token.guard';
 import type { RequestPayload } from '../auth/interface/payload.interface';
-import { FileService } from './file.service';
+import { FileService, Order, Sort } from './file.service';
 import { ResponseMessageWithData } from '../responses/response.message.with.data';
 import { File } from '@prisma/client';
 
@@ -37,6 +40,56 @@ export class FileController {
     const filesImport = await this.fileService.importFiles(files, req.user.sub);
     return {
       data: { files: filesImport },
+      message: 'Files imported successfully',
+    };
+  }
+
+  @Get()
+  @UseGuards(AccessTokenGuard)
+  async getFiles(
+    @Req() req: RequestPayload,
+    @Query("page", new ParseIntPipe({optional: true})) page: number,
+    @Query("limit", new ParseIntPipe({optional: true})) limit: number,
+    @Query("sort") sort: string,
+    @Query("order") order: string,
+  ): Promise<
+    ResponseMessageWithData<{
+      files: File[];
+    }>
+  > {
+    let files: File[] = [];
+    if (page === undefined && limit === undefined && order === undefined && sort === undefined) {
+      files = await this.fileService.getFiles(req.user.sub);
+    } else {
+      if (page) {
+        if (sort) {
+          if (limit) {
+            if (order) {
+              files = await this.fileService.getFiles(req.user.sub, page, sort as Sort, limit, order as Order)
+            } else {
+              files = await this.fileService.getFiles(req.user.sub, page, sort as Sort, limit)
+            }
+          } else {
+            if (order) {
+              files = await this.fileService.getFiles(req.user.sub, page, sort as Sort, undefined, order as Order);
+            } else {
+              files = await this.fileService.getFiles(req.user.sub, page, sort as Sort);
+            }
+          }
+        } else {
+          files = await this.fileService.getFiles(req.user.sub, page);
+        }
+      } 
+      if (sort && page === undefined) {
+        if (order) {
+          files = await this.fileService.getFiles(req.user.sub, undefined, sort as Sort, undefined, order as Order);
+        } else {
+          files = await this.fileService.getFiles(req.user.sub, undefined, sort as Sort);
+        }
+      }
+    }
+    return {
+      data: { files },
       message: 'Files imported successfully',
     };
   }
