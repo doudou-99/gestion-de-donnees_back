@@ -4,7 +4,6 @@ import { UserModule } from '../user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { MailModule } from '../mail/mail.module';
-import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -13,7 +12,6 @@ import { ConfigModule } from '@nestjs/config';
     JwtModule.register({
       global: true,
     }),
-    ConfigModule.forRoot()
   ],
   controllers: [AuthController],
   providers: [AuthService],
