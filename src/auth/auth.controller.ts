@@ -85,7 +85,7 @@ export class AuthController {
       { sub: user.id },
       {
         secret: process.env.SECRET_KEY,
-        expiresIn: '1000s',
+        expiresIn: '60s',
       },
     );
     const refresh_token = await this.authService.generateToken(
@@ -93,11 +93,12 @@ export class AuthController {
       {
         algorithm: 'HS512',
         secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '240s',
+        expiresIn: '15m',
       },
     );
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"})
+
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production", expires: new Date(Date.now()+ 90000)})
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected'
@@ -131,11 +132,11 @@ export class AuthController {
       {
         algorithm: 'HS512',
         secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '240s',
+        expiresIn: '15m',
       },
     );
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"});
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production", expires: new Date(Date.now()+90000)});
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created'
