@@ -6,6 +6,7 @@ import {
   Post,
   PreconditionFailedException,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -18,7 +19,7 @@ import type { RequestPayloadWithRefresh } from './interface/payload.interface';
 import { RefreshTokenGuard } from './guard/refresh.token.guard';
 import { SignupDto } from './dto/signup.dto';
 import { User } from '@prisma/client';
-import express from 'express';
+import type { Request, Response } from 'express';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -57,7 +58,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('signin')
-  async signIn(@Body() body: SigninDTO): Promise<
+  async signIn(@Body() body: SigninDTO, @Res({passthrough: true}) res: Response): Promise<
     ResponseMessageWithData<{
       user: loginInterface;
       access_token: string;
@@ -92,10 +93,12 @@ export class AuthController {
       {
         algorithm: 'HS512',
         secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '240s',
+        expiresIn: '15m',
       },
     );
+
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"})
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected'
@@ -105,7 +108,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
-  async refresh(@Req() req: RequestPayloadWithRefresh): Promise<
+  async refresh(@Req() req: RequestPayloadWithRefresh, @Res() res: Response): Promise<
     ResponseMessageWithData<{
       access_token: string;
       refresh_token: string;
@@ -129,10 +132,11 @@ export class AuthController {
       {
         algorithm: 'HS512',
         secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '240s',
+        expiresIn: '15m',
       },
     );
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"});
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created'
