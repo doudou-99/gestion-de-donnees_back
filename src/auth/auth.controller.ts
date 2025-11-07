@@ -98,7 +98,7 @@ export class AuthController {
     );
 
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production", expires: new Date(Date.now()+ 90000)})
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"})
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected'
@@ -136,7 +136,7 @@ export class AuthController {
       },
     );
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production", expires: new Date(Date.now()+90000)});
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"});
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created'
