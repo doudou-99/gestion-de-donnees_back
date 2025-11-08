@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { File } from '@prisma/client';
 import { importDto } from './dto/import.dto';
-import { SearchDto } from './dto/search.dto';
 
 export type Sort = "name" | "updatedAt";
 export type Order = "ASC" | "DESC";
@@ -90,15 +89,15 @@ export class FileService {
      * sort is used for sorting the files by name or date 
      * order for descending or ascending order of files
      */
-    async searchFiles(search: SearchDto, userId: number, page?: number, sort?: Sort, limit: number = 10, order: Order = "ASC") {
+    async searchFiles(userId: number, updatedAt: Date | null, name?: string, typeFile?: string, page?: number, sort?: Sort, limit: number = 10, order: Order = "ASC") {
         let whereFilters: Record<string, any> = {"userId": userId};
-        if (search.name === undefined && search.typeFile === undefined && search.updatedAt === null) {
+        if (name === undefined && typeFile === undefined && updatedAt === null) {
             return []
         } else {
-            if (search.name) whereFilters["name"]= { contains: search.name};
-            if (search.typeFile) whereFilters["mimeType"]= { contains: search.typeFile};
-            if (search.updatedAt && search.updatedAt !== null && typeof search.updatedAt === "string") {
-                const updated = new Date(Date.parse(search.updatedAt));
+            if (name) whereFilters["name"]= { contains: name};
+            if (typeFile) whereFilters["mimeType"]= { contains: typeFile};
+            if (updatedAt && updatedAt !== null && typeof updatedAt === "string") {
+                const updated = new Date(Date.parse(updatedAt));
                 const start = new Date(Date.UTC(updated.getFullYear(), updated.getMonth(), updated.getDate(),0,0,0,0));
                 const end = new Date(Date.UTC(updated.getFullYear(), updated.getMonth(), updated.getDate(),23,59,59,999));
                 whereFilters["updatedAt"] = {
@@ -144,5 +143,19 @@ export class FileService {
                 where: whereFilters,
             });
         }
+    }
+
+    /**
+     * Get the owner of the file by id
+     */
+    async getOwnerFile(idFile: number) {
+        return this.prisma.file.findUniqueOrThrow({
+            select: {
+                user: true
+            },
+            where: {
+                id: idFile
+            }
+        }).user();
     }
 }

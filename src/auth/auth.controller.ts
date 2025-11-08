@@ -19,9 +19,12 @@ import type { RequestPayloadWithRefresh } from './interface/payload.interface';
 import { RefreshTokenGuard } from './guard/refresh.token.guard';
 import { SignupDto } from './dto/signup.dto';
 import { User } from '@prisma/client';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { UserResponse } from './interface/user.response';
 
 @Controller('api/v1/auth')
+@ApiTags("auth")
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -29,6 +32,9 @@ export class AuthController {
   ) {}
 
   @HttpCode(HttpStatus.CREATED)
+  @ApiCreatedResponse({type:  ResponseMessageWithData<{
+    user: UserResponse;
+  }>})
   @Post('signup')
   async signUp(@Body() body: SignupDto): Promise<
     ResponseMessageWithData<{
@@ -57,6 +63,11 @@ export class AuthController {
 
 
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({type: ResponseMessageWithData<{
+    user: loginInterface;
+    access_token: string;
+    refresh_token: string;
+  }> })
   @Post('signin')
   async signIn(@Body() body: SigninDTO, @Res({passthrough: true}) res: Response): Promise<
     ResponseMessageWithData<{
@@ -106,9 +117,14 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOkResponse({type: ResponseMessageWithData<{
+    access_token: string;
+    refresh_token: string;
+  }> })
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
-  async refresh(@Req() req: RequestPayloadWithRefresh, @Res() res: Response): Promise<
+  async refresh(@Req() req: RequestPayloadWithRefresh, @Res({passthrough: true}) res: Response): Promise<
     ResponseMessageWithData<{
       access_token: string;
       refresh_token: string;
