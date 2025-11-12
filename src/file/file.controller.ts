@@ -507,4 +507,25 @@ export class FileController {
       message: 'File moved to the bin',
     };
   }
+
+  @Patch(':idFile/move/home')
+  @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      file: FileResponse;
+    }>,
+    description: "Moved file to the home with response message",
+  })
+  async moveFileToHome(@Param('idFile', ParseIntPipe) idFile: number): Promise<
+    ResponseMessageWithData<{
+      file: File;
+    }>
+  > {
+    const file = await this.fileService.moveFileToHome(idFile);
+    console.log("🚀 ~ file.controller.ts:525 ~ FileController ~ moveFileToHome ~ file:", file)
+    return {
+      data: { file },
+      message: 'File moved to the home',
+    };
+  }
 }
