@@ -178,6 +178,122 @@ export class FileController {
     };
   }
 
+  @Get("bin")
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'Number of page used for the pagination of the results',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description:
+      'Number of elements of page used for the pagination of the results',
+  })
+  @ApiQuery({
+    name: 'sort',
+    type: 'string',
+    required: false,
+    description: 'Field (name,updatedAt) used to sort the results',
+  })
+  @ApiQuery({
+    name: 'order',
+    type: 'string',
+    required: false,
+    description: 'Type of order used to sort the results(ASC, DESC)',
+  })
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      files: FileResponse[];
+    }>,
+    description: 'Moved files in the bin with message',
+  })
+  async getFilesBin(
+    @Req() req: RequestPayload,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
+    @Query('sort') sort: string,
+    @Query('order') order: string,
+  ): Promise<
+    ResponseMessageWithData<{
+      files: File[];
+    }>
+  > {
+    let files: File[] = [];
+    if (
+      page === undefined &&
+      limit === undefined &&
+      order === undefined &&
+      sort === undefined
+    ) {
+      files = await this.fileService.getFilesBin(req.user.sub);
+    } else {
+      if (page) {
+        if (sort) {
+          if (limit) {
+            if (order) {
+              files = await this.fileService.getFilesBin(
+                req.user.sub,
+                page,
+                sort as Sort,
+                limit,
+                order as Order,
+              );
+            } else {
+              files = await this.fileService.getFilesBin(
+                req.user.sub,
+                page,
+                sort as Sort,
+                limit,
+              );
+            }
+          } else {
+            if (order) {
+              files = await this.fileService.getFilesBin(
+                req.user.sub,
+                page,
+                sort as Sort,
+                undefined,
+                order as Order,
+              );
+            } else {
+              files = await this.fileService.getFilesBin(
+                req.user.sub,
+                page,
+                sort as Sort,
+              );
+            }
+          }
+        } else {
+          files = await this.fileService.getFilesBin(req.user.sub, page);
+        }
+      }
+      if (sort && page === undefined) {
+        if (order) {
+          files = await this.fileService.getFilesBin(
+            req.user.sub,
+            undefined,
+            sort as Sort,
+            undefined,
+            order as Order,
+          );
+        } else {
+          files = await this.fileService.getFilesBin(
+            req.user.sub,
+            undefined,
+            sort as Sort,
+          );
+        }
+      }
+    }
+    return {
+      data: { files },
+      message: 'Files list in the bin',
+    };
+  }
+
   @Get('search')
   @ApiQuery({
     name: 'name',
