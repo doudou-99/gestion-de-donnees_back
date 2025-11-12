@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -366,6 +367,28 @@ export class FileController {
     return {
       data: { owner },
       message: 'Owner of the file displayed successfully',
+    };
+  }
+
+
+  @Patch(':idFile/move/bin')
+  @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      file: FileResponse;
+    }>,
+    description: "Moved file to the bin with response message",
+  })
+  async moveFileToBin(@Param('idFile', ParseIntPipe) idFile: number): Promise<
+    ResponseMessageWithData<{
+      file: File;
+    }>
+  > {
+    const file = await this.fileService.moveFileToBin(idFile);
+    console.log("🚀 ~ file.controller.ts:388 ~ FileController ~ moveFileToBin ~ file:", file);
+    return {
+      data: { file },
+      message: 'File moved to the bin',
     };
   }
 }
