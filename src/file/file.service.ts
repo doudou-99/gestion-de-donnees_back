@@ -224,4 +224,58 @@ export class FileService {
       },
     });
   }
+
+    /**
+   * Get moved files in the bin
+   * page is used for the pagination of the list and limit is the number of files per page
+   * sort is used for sorting the files by name or date
+   * order for descending or ascending order of files
+   */
+    async getFilesBin(
+        userId: number,
+        page?: number,
+        sort?: Sort,
+        limit: number = 10,
+        order: Order = 'ASC',
+      ) {
+        const whereFilters: Record<string, any> = {
+            userId,
+            status: 'BIN',
+        };
+        if (page) {
+          if (sort) {
+            let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
+            const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
+            console.log([sortFilter], page);
+            return await this.prisma.file.findMany({
+              skip: (page - 1) * limit,
+              take: limit,
+              where: whereFilters,
+              orderBy: {
+                [sortFilter]: orderSort.toLowerCase(),
+              },
+            });
+          } else {
+            return await this.prisma.file.findMany({
+              skip: (page - 1) * limit,
+              take: limit,
+              where: whereFilters,
+            });
+          }
+        }
+        if (sort) {
+          let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
+          const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
+    
+          return await this.prisma.file.findMany({
+            where: whereFilters,
+            orderBy: {
+              [sortFilter]: orderSort.toLowerCase(),
+            },
+          });
+        }
+        return await this.prisma.file.findMany({
+          where: whereFilters
+        });
+      }
 }
