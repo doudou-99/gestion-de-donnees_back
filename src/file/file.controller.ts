@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -28,6 +29,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { FileResponse } from './responses/file.response';
+import { ResponseMessage } from '../responses/response.message';
 
 @Controller('api/v1/files')
 @ApiTags('file')
@@ -293,6 +295,20 @@ export class FileController {
       message: 'Files list in the bin',
     };
   }
+
+  @Delete("bin")
+  @ApiOkResponse({
+    type: ResponseMessage,
+    description: 'Response message with deleted files',
+  })
+  async deleteFiles(@Body() files: number[]): Promise<ResponseMessage> {
+    await this.fileService.deleteFiles(files);
+    console.log("Deleted files");
+    return {
+      message: "Files deleted successfully"
+    }
+  }
+  
 
   @Get('search')
   @ApiQuery({
