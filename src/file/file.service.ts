@@ -199,7 +199,7 @@ export class FileService {
    * Get the owner of the file by id
    */
   async getOwnerFile(idFile: number) {
-    return this.prisma.file
+    return await this.prisma.file
       .findUniqueOrThrow({
         select: {
           user: true,
@@ -215,7 +215,7 @@ export class FileService {
    * Change status of file to BIN
    */
   async moveFileToBin(idFile: number) {
-    return this.prisma.file.update({
+    return await this.prisma.file.update({
       data: {
         status: 'BIN',
       },
@@ -283,7 +283,7 @@ export class FileService {
    * Change status of file to HOME
    */
   async moveFileToHome(idFile: number) {
-    return this.prisma.file.update({
+    return await this.prisma.file.update({
       data: {
         status: 'HOME',
       },
@@ -292,4 +292,19 @@ export class FileService {
       }
     });
   }
+
+
+   /**
+   * Delete files
+   */
+    async deleteFiles(files: number[]) {
+      for (let id of files) {
+        await this.prisma.file.delete({
+          where: {
+            id,
+            status: "BIN"
+          }
+        });
+      }
+    }
 }
