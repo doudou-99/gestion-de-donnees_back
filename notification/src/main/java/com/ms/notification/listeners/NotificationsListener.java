@@ -8,7 +8,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ms.notification.dto.CreateNotificationRequest;
@@ -113,7 +113,7 @@ public class NotificationsListener {
             if (messageEnvelope.has("data")) {
                 JsonNode dataNode = messageEnvelope.get("data");
                 log.info("Extracted data: {}", dataNode.toString());
-                Map<String, Object> idMap = objectMapper.treeToValue(dataNode,Map.class);
+                Map<String, Object> idMap = objectMapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
                 String id = idMap.get("id").toString();
                 log.info(id);
                 NotificationDto notificationDto = notificationService.getNotification(id);
@@ -174,7 +174,7 @@ public class NotificationsListener {
             if (messageEnvelope.has("data")) {
                 JsonNode dataNode = messageEnvelope.get("data");
                 log.info("Extracted data: {}", dataNode.toString());
-                Map<String, Object> idMap = objectMapper.treeToValue(dataNode,Map.class);
+                Map<String, Object> idMap = objectMapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
                 int id = Integer.parseInt(idMap.get("id").toString());
                 List<NotificationDto> notificationDto = notificationService.getNotificationsUser(id);
                 String responseJson = objectMapper.writeValueAsString(notificationDto);
@@ -208,7 +208,7 @@ public class NotificationsListener {
             if (messageEnvelope.has("data")) {
                 JsonNode dataNode = messageEnvelope.get("data");
                 log.info("Extracted data: {}", dataNode.toString());
-                Map<String, Object> idMap = objectMapper.treeToValue(dataNode,Map.class);
+                Map<String, Object> idMap = objectMapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
                 int id = Integer.parseInt(idMap.get("id").toString());
                 List<NotificationDto> notificationDto = notificationService.getNotificationsRead(id);
                 String responseJson = objectMapper.writeValueAsString(notificationDto);
@@ -242,7 +242,7 @@ public class NotificationsListener {
             if (messageEnvelope.has("data")) {
                 JsonNode dataNode = messageEnvelope.get("data");
                 log.info("Extracted data: {}", dataNode.toString());
-                Map<String, Object> idMap = objectMapper.treeToValue(dataNode,Map.class);
+                Map<String, Object> idMap = objectMapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
                 int id = Integer.parseInt(idMap.get("id").toString());
                 List<NotificationDto> notificationDto = notificationService.getNotificationsNotRead(id);
                 String responseJson = objectMapper.writeValueAsString(notificationDto);
@@ -275,7 +275,7 @@ public class NotificationsListener {
             if (messageEnvelope.has("data")) {
                 JsonNode dataNode = messageEnvelope.get("data");
                 log.info("Extracted data: {}", dataNode.toString());
-                Map<String, Object> idMap = objectMapper.treeToValue(dataNode,Map.class);
+                Map<String, Object> idMap = objectMapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
                 String id = idMap.get("id").toString();             
                 NotificationDto notificationDto = notificationService.isReadNotification(id);
                 String responseJson = objectMapper.writeValueAsString(notificationDto);
@@ -308,7 +308,7 @@ public class NotificationsListener {
             if (messageEnvelope.has("data")) {
                 JsonNode dataNode = messageEnvelope.get("data");
                 log.info("Extracted data: {}", dataNode.toString());
-                Map<String, Object> idMap = objectMapper.treeToValue(dataNode,Map.class);
+                Map<String, Object> idMap = objectMapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
                 String id = idMap.get("id").toString();       
                 notificationService.deleteNotification(id);
                 String responseJson = objectMapper.writeValueAsString(null);

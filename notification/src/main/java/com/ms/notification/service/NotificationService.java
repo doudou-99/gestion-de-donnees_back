@@ -2,7 +2,6 @@ package com.ms.notification.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -10,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.ms.notification.dto.CreateNotificationRequest;
@@ -21,6 +21,8 @@ import com.ms.notification.entity.enums.TypeNotification;
 import com.ms.notification.entity.enums.TypeRecipient;
 import com.ms.notification.exceptions.NotificationNotFoundException;
 import com.ms.notification.handlers.EmailHandler;
+import com.ms.notification.handlers.PushHandler;
+import com.ms.notification.handlers.WebhookHandler;
 import com.ms.notification.repositories.NotificationRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -38,19 +40,39 @@ public class NotificationService {
     @Autowired
     EmailHandler handler;
 
+    @Autowired
+    PushHandler pushHandler;
+
+    @Autowired
+    WebhookHandler webhookHandler;
+
+    private SimpMessagingTemplate messagingTemplate;
+
     @CachePut(value = "notificationsCache", key = "#request")
     public NotificationDto createNotification(CreateNotificationRequest request) {
         TypeNotification type = TypeNotification.valueOf(request.getType());
+        TypeChannel channel = TypeChannel.valueOf(request.getTypeChannel());
 
         Notification notification = new Notification(request.getRecipientId(),
-                TypeRecipient.valueOf(request.getRecipientType()), type, TypeChannel.valueOf(request.getTypeChannel()),
+                TypeRecipient.valueOf(request.getRecipientType()), type, channel,
                 request.getMetadata());
         Template template = this.templateService.getTemplateByType(type);
         log.info(template.toString());
         notification.setTemplateId(template.getId());
         Notification notif = this.repository.save(notification);
-        sendNotification(notification.getType(), notif.getTypeChannel(), notif.getId(), request.getMetadata(),
-                request.getMessage());
+        if (channel == TypeChannel.EMAIL) {
+            handler.sendNotification(notification.getType(), notif.getTypeChannel(), notif.getId(), request.getMetadata(),
+            request.getMessage());
+        }
+        if (channel == TypeChannel.PUSH) {
+            String token = (String) request.getMetadata().get("device-token");
+            String title = (String) notif.getMetadata().get("title");
+            pushHandler.send(token, title, request.getMessage());
+        }
+        if (channel == TypeChannel.WEBHOOK) {
+            webhookHandler.send(notif);
+        }
+        messagingTemplate.convertAndSend("/topic/" + notif.getRecipientId(), notif);
         log.debug("Notification created successfully");
         return mapToDTO(notification);
     }
@@ -124,46 +146,6 @@ public class NotificationService {
     
     public void deleteAllExpiredNotif() {
         this.repository.deleteAllByExpiresAtGreaterThanEqual(LocalDateTime.now());
-    }
-
-    public void sendNotification(TypeNotification type, TypeChannel typeChannel, String id, Map<String, Object> content,
-            String message) {
-
-        if (type == TypeNotification.SHAREFILE && typeChannel == TypeChannel.EMAIL && content.containsKey("fileName")
-                && content.containsKey("fileId") && content.containsKey("recipient")
-                && content.containsKey("sender")) {
-            String msg = "<html><body>" + message + " of file " + content.get("fileName").toString() + " from user "
-                    + content.get("recipient").toString() +
-                    "<p><a href='http://localhost:3000/api/v1/share/" + content.get("fileId")
-                    + "'>Click here to share <img src='http://localhost:3000/api/v1/notification/read/" + id
-                    + "' width='1px' height='1px' alt=''/></a></p></body></html>";
-            handler.sendEmail(content.get("recipient").toString(), "Share file", msg);
-        }
-        if (type == TypeNotification.EXPIRED_TOKEN && typeChannel == TypeChannel.EMAIL
-                && content.containsKey("recipient")) {
-            String msg = "<html><body>" + message
-                    + " of user "+ content.get("recipient").toString() + "<p>To confirm that you have read the notification, click <a href='http://localhost:3000/api/v1/notification/read/"
-                    + id + "'>here</a></p>"
-                    + "</body></html>";
-            handler.sendEmail(content.get("recipient").toString(), "Expired token", msg);
-        }
-        if (type == TypeNotification.ACCESSFILE && typeChannel == TypeChannel.EMAIL && content.containsKey("fileName")
-                && content.containsKey("fileId") && content.containsKey("recipient")) {
-            String msg = "<html><body>" + message + " of file " + content.get("fileName").toString() + " from user "
-                    + content.get("recipient").toString() +
-                    "<p><a href='http://localhost:3000/api/v1/share/access/" + content.get("fileId")
-                    + "'>Click here to  <img src='http://localhost:3000/api/v1/notification/read/" + id
-                    + "' width='1px' height='1px' alt=''/></a></p></body></html>";
-            handler.sendEmail(content.get("recipient").toString(), "Access file", msg);
-        }
-        if (type == TypeNotification.JOINGROUP && typeChannel == TypeChannel.EMAIL && content.containsKey("groupName")
-                && content.containsKey("groupId") && content.containsKey("recipient")) {
-            String msg = "<html><body>" + message + " of  group " + content.get("groupName").toString() + " by user "
-                    + content.get("recipient").toString() +
-                    "<p>To confirm that you have read the notification, click <a href='http://localhost:3000/api/v1/notification/read/"
-                    + id + "'>here</a></p>";
-            handler.sendEmail(content.get("recipient").toString(), "Request to join group", msg);
-        }
     }
 
     public NotificationDto mapToDTO(Notification notification) {

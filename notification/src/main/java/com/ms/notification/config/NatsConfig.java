@@ -3,6 +3,7 @@ package com.ms.notification.config;
 import java.io.IOException;
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class NatsConfig {
 
-    private final String URL = "nats://127.0.0.1:4222";
+    @Value("${NATS_URL:nats://nats:4222}")
+    private String URL;
 
     private final long CONNECTION_TIMEOUT = 5000;
 
