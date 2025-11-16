@@ -17,8 +17,10 @@ export class UserController {
         user: User
       }>
     > {
-      const user = await this.userService.getRecipientById(id)
-      return user;
-
+      const user = await this.userService.getById(id)
+      return { 
+        data: {user},
+        message: "Get user"
+      }
     }
 }
