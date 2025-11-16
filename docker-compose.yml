@@ -7,11 +7,11 @@ services:
       - "4222:4222" # client port
       - "8222:8222" # monitoring port
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8222/healthz"]      
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      test: wget http://localhost:8222/healthz -q -S -O -
+      start_period: 3s
+      retries: 3
+      timeout: 3s
+      interval: 14s
     networks:
       - microservices-network-dev
   mysql:
@@ -127,6 +127,8 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - NATS_URL=nats://nats:4222
       - SPRING_DATA_MONGODB_URI=mongodb://root:example@mongo:27017/notification_db?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       mongo:
         condition: service_healthy
