@@ -9,6 +9,7 @@ import {
   Post,
   PreconditionFailedException,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -19,26 +20,65 @@ import { ResponseMessageWithData } from '../responses/response.message.with.data
 import { loginInterface } from './interface/logininterface';
 import type { RequestPayload, RequestPayloadWithRefresh } from './interface/payload.interface';
 import { RefreshTokenGuard } from './guard/refresh.token.guard';
+import { SignupDto } from './dto/signup.dto';
 import { User } from '@prisma/client';
-import { NotificationService } from '../notification/notification.service';
-import { JwtService } from '@nestjs/jwt';
+import type { Response } from 'express';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { UserResponse } from './interface/user.response';
 import { AccessTokenGuard } from './guard/access.token.guard';
-import { TypeRecipient } from '../notification/enums/EnumTypeRecipient';
-import { TypeNotification } from '../notification/enums/EnumTypeNotification';
 import { TypeChannel } from '../notification/enums/EnumTypeChannel';
+import { TypeNotification } from '../notification/enums/EnumTypeNotification';
+import { TypeRecipient } from '../notification/enums/EnumTypeRecipient';
 
 @Controller('api/v1/auth')
+@ApiTags("auth")
 export class AuthController {
+  jwtService: any;
+  notificationService: any;
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
-    private readonly jwtService: JwtService,
-    private readonly notificationService: NotificationService
   ) {}
 
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCreatedResponse({type:  ResponseMessageWithData<{
+    user: UserResponse;
+  }>})
+  @Post('signup')
+  async signUp(@Body() body: SignupDto): Promise<
+    ResponseMessageWithData<{
+      user: User;
+    }>
+  > {
+    body.password = await this.authService.hash(body.password);
+    const user = await this.userService.create(body);
+
+    //Confirm token
+    const confirm_token = await this.authService.generateToken(
+      { sub: user.id },
+      {
+        secret: process.env.SECRET_CONFIRM_KEY,
+        expiresIn: '60s',
+      }
+    );
+    const hashed = await this.authService.hash(confirm_token);
+    await this.authService.upsertToken(user.id, hashed, "ACTIVATEACCOUNT");
+    await this.authService.sendConfirmEmail(body.email, confirm_token);
+    return {
+      data: { user },
+      message: 'The user is created'
+    };
+  }
+
+
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({type: ResponseMessageWithData<{
+    user: loginInterface;
+    access_token: string;
+    refresh_token: string;
+  }> })
   @Post('signin')
-  async signIn(@Body() body: SigninDTO): Promise<
+  async signIn(@Body() body: SigninDTO, @Res({passthrough: true}) res: Response): Promise<
     ResponseMessageWithData<{
       user: loginInterface;
       access_token: string;
@@ -73,16 +113,12 @@ export class AuthController {
       {
         algorithm: 'HS512',
         secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '240s',
+        expiresIn: '15m',
       },
     );
+
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    const t = this.jwtService.decode(access_token);
-    if (t?.exp) {
-      let metadata: any = JSON.stringify({"recipient": user.email})
-      this.notificationService.create({message:"Expired token", metadata,
-         recipientId: user.id, recipientType: TypeRecipient.USER, type: TypeNotification.EXPIRED_TOKEN, typeChannel: TypeChannel.PUSH})
-    }
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"})
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected'
@@ -90,9 +126,14 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOkResponse({type: ResponseMessageWithData<{
+    access_token: string;
+    refresh_token: string;
+  }> })
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
-  async refresh(@Req() req: RequestPayloadWithRefresh): Promise<
+  async refresh(@Req() req: RequestPayloadWithRefresh, @Res({passthrough: true}) res: Response): Promise<
     ResponseMessageWithData<{
       access_token: string;
       refresh_token: string;
@@ -116,10 +157,11 @@ export class AuthController {
       {
         algorithm: 'HS512',
         secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '240s',
+        expiresIn: '15m',
       },
     );
     await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
+    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"});
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created'

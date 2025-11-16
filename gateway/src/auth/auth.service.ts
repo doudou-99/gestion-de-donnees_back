@@ -5,12 +5,14 @@ import { PayloadInterface } from './interface/payload.interface';
 import { JwtOptionsInterface } from './interface/jwt.options.interface';
 import { EnumTokenType, Token } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly mailService: MailService
   ) {}
 
   async hash(elementToHash: string): Promise<string> {
@@ -55,5 +57,18 @@ export class AuthService {
     return this.prisma.token.findUniqueOrThrow({
         where: {type_userId: {type, userId}}
     });
+  }
+
+  async sendConfirmEmail(email: string, token: string) {
+    const url = `${process.env.BASE_URL}/api/v1/auth/confirm/${token}`;
+    const message = `
+    <p>
+      Welcome to the app Gestion de données, click in the link to confirm the account: <a href=${url}>here</a>
+    </p>
+    <strong>
+      The link is invalid after one minute.
+    </strong>
+    `;
+    this.mailService.sendEmail(email, process.env.MAIL_USERNAME, "Confirm mail", message);
   }
 }

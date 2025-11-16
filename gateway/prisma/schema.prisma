@@ -36,7 +36,6 @@ model User {
   fileRequests            FileRequest[]
   memberGroups            MemberGroup[]
   messages                Message[]  
-  shares                  Share[]
   shares_with_users       ShareWithUsers[]
   shares_with_groups      ShareWithGroups[]
   accessLogs              AccessLog[]
@@ -45,13 +44,11 @@ model User {
   tokens                  Token[]
 }
 
-model Type {
-  id              Int              @id @default(autoincrement()) 
-  typeName        String           @db.VarChar(50)
-  typeDescription String           @db.Text
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt  
-  files           File[]
+enum EnumStatusFile {
+  HOME
+  BIN 
+  DELETED 
+  ARCHIVED
 }
 
 model File {
@@ -60,19 +57,24 @@ model File {
   size            Int?             
   user            User             @relation(fields: [userId], references: [id])
   userId          Int             
-  typeId          Int
-  url             String           @db.VarChar(255)
-  type            Type             @relation(fields: [typeId], references: [id])
+  path            String           @db.VarChar(255)
+  mimeType        String           @db.VarChar(255)
+  status          EnumStatusFile? 
+  shareUrl        String?          @db.VarChar(255)  
   editFile        EnumEditFile?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  parent          File?            @relation(name: "parent", fields: [parentId], references: [id])  
+  parentId        Int?             @unique
   version         String?          @db.VarChar(255)
   filePermission  String?          @db.VarChar(255)
   fileRequests    FileRequest[]
   messages        Contains[]
-  shares          Share[]
   accessLogs      AccessLog[]
   changeLogs      ChangeLog[]
+  childs          File[]           @relation(name: "parent")
+  sharesUsers ShareWithUsers[]
+  sharesGroups ShareWithGroups[]
 }
 
 enum EnumEditFile {
@@ -139,24 +141,11 @@ model Contains {
   file         File            @relation(fields: [idFile], references: [id])
   @@id([idMessage, idFile])
 }
-
-model Share {
-  id                    Int                   @id @default(autoincrement()) 
-  shareUrl              String                @db.VarChar(255)
-  userId                Int             
-  user                  User                  @relation(fields: [userId], references: [id])
-  file                  File                  @relation(fields: [fileId], references: [id])
-  fileId                Int            
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  sharesWithUsers       ShareWithUsers[]
-  sharesWithGroups      ShareWithGroups[]
-}
   
 
 model ShareWithUsers {
-  shareId            Int             
-  share              Share             @relation(fields: [shareId], references: [id])    
+  fileId             Int      
+  file               File              @relation(fields: [fileId], references: [id])
   userId             Int
   user               User              @relation(fields: [userId], references: [id])
   accessType         EnumAccessType
@@ -164,13 +153,13 @@ model ShareWithUsers {
   status             EnumStatusShare?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
-  @@id([shareId, userId])
+  @@id([fileId, userId])
 }
 
 
 model ShareWithGroups {
-  shareId            Int            
-  share              Share           @relation(fields: [shareId], references: [id])    
+  fileId             Int      
+  file               File            @relation(fields: [fileId], references: [id])
   userId             Int
   user               User            @relation(fields: [userId], references: [id])
   accessType         EnumAccessType
@@ -178,7 +167,7 @@ model ShareWithGroups {
   status             EnumStatusShare?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
-  @@id([shareId, userId])
+  @@id([fileId, userId])
 }
 
 enum EnumAccessType {
@@ -226,6 +215,7 @@ enum EnumTokenType {
   REFRESHTOKEN
   ACTIVATEACCOUNT
   RESETPASSWORD
+  SHARE_TOKEN
 }
 
 model Token {
