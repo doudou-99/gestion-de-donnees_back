@@ -23,6 +23,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_PASSWORD: root
+      MYSQL_DATABASE: gestion_file
     volumes:
       - db-data:/var/lib/mysql
     networks:
@@ -47,11 +48,11 @@ services:
     ports:
     - "27017:27017"
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet      
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 40s
     volumes:
       - mongodb-data:/data/db
     networks:
@@ -111,10 +112,10 @@ services:
       - /app/node_modules
     depends_on:
       - nats
+      - mysql
       - notification-service
     networks:
       - microservices-network-dev
-    command: npm run start:dev
 
   notification-service:
     build:

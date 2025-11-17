@@ -20,6 +20,7 @@ attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
   if check_mysql > /dev/null 2>&1; then
+    npx prisma migrate dev --name init
     echo "✅ MySQL est prêt!"
     break
   fi

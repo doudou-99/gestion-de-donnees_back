@@ -21,7 +21,7 @@ COPY . .
 RUN chmod +x init-db.sh
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
 # Debug port
 EXPOSE 9229
