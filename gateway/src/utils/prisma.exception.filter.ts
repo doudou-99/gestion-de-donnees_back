@@ -34,6 +34,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
                 message = "Bad Request"
                 break;
         }
+        console.error(exception.message, exception.cause);
         response.status(status).json({
             ...body,
             message: message

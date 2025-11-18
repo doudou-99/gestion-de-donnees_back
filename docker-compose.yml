@@ -1,11 +1,10 @@
-
 services: 
   nats:
     image: nats:alpine
     restart: always
     ports:
-      - "4222:4222" # client port
-      - "8222:8222" # monitoring port
+      - "4222:4222"
+      - "8222:8222"
     healthcheck:
       test: wget http://localhost:8222/healthz -q -S -O -
       start_period: 3s
@@ -14,6 +13,7 @@ services:
       interval: 14s
     networks:
       - microservices-network-dev
+
   mysql:
     image: mysql
     container_name: db_projet
@@ -28,17 +28,28 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - microservices-network-dev
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
   phpmyadmin:
     image: phpmyadmin
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     restart: always
     ports:
       - 8080:80
     environment:
       PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root
     networks:
       - microservices-network-dev
+
   mongo:
     image: mongo
     restart: always
@@ -46,9 +57,9 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
     ports:
-    - "27017:27017"
+      - "27017:27017"
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet      
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/27017"]      
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,7 +78,7 @@ services:
       mongo:
         condition: service_healthy
     environment:
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/notification_db?authSource=admin
       ME_CONFIG_BASICAUTH_ENABLED: true
       ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
       ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
@@ -79,6 +90,7 @@ services:
       start_period: 20s
     networks:
       - microservices-network-dev
+
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -86,7 +98,7 @@ services:
       - "6379:6379"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      interval: 1s
+      interval: 5s
       timeout: 3s
       retries: 5
     volumes:
@@ -94,10 +106,11 @@ services:
     command: redis-server --appendonly yes
     networks:
       - microservices-network-dev
+
   gateway:
     build:
-      context: ./gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./gateway/Dockerfile
     container_name: gateway-api
     environment:
       NODE_ENV: development
@@ -109,18 +122,24 @@ services:
       - "9229:9229" 
     volumes:
       - ./gateway/src:/app/src
+      - ./gateway/prisma:/app/prisma
+      - ./gateway/init-db.sh:/app/init-db.sh 
       - /app/node_modules
     depends_on:
-      - nats
-      - mysql
-      - notification-service
+      mysql:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
     networks:
       - microservices-network-dev
+    restart: unless-stopped
 
   notification-service:
     build:
-      context: ./notification
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./notification/Dockerfile
     container_name: notification
     ports:
       - "8082:8082"
@@ -151,6 +170,7 @@ volumes:
   mongodb-data:
   redis-data:
   db-data:
+    driver: local
 
 networks:
   microservices-network-dev:
