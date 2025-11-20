@@ -289,22 +289,66 @@ export class FileService {
       },
       where: {
         id: idFile,
-      }
+      },
     });
   }
 
+  /**
+   * Get all users and groups that have access to the file
+   */
+  async getAccessUsersGroupsFile(idFile: number) {
+    return await this.prisma.file.findMany({
+      select: {
+        sharesGroups: {
+          select: {
+            group: true,
+            fileId: true,
+            groupId: true,
+            accessType: true,
+            expirationDate: true,
+          },
+          where: {
+            fileId: idFile,
+          },
+        },
+        sharesUsers: {
+          select: {
+            accessType: true,
+            fileId: true,
+            user: true,
+            userId: true,
+          },
+          where: {
+            fileId: idFile,
+          },
+        },
+      },
+      where: {
+        sharesGroups: {
+          some: {
+            fileId: idFile,
+          },
+        },
+        sharesUsers: {
+          some: {
+            fileId: idFile,
+          },
+        },
+      },
+    });
+  }
 
-   /**
+  /**
    * Delete files
    */
-    async deleteFiles(files: number[]) {
-      for (let id of files) {
-        await this.prisma.file.delete({
-          where: {
-            id,
-            status: "BIN"
-          }
-        });
-      }
+  async deleteFiles(files: number[]) {
+    for (let id of files) {
+      await this.prisma.file.delete({
+        where: {
+          id,
+          status: 'BIN',
+        },
+      });
     }
+  }
 }
