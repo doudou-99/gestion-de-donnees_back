@@ -22,12 +22,12 @@ enum EnumUserStatus {
 
 model User {
   id                      Int                   @id @default(autoincrement()) 
-  username                String                @db.VarChar(50)
+  username                String?               @db.VarChar(50)
   email                   String                @unique() @db.VarChar(50)
-  password                String                @db.VarChar(100)
-  address                 String                @db.VarChar(100)
+  password                String?               @db.VarChar(100)
+  address                 String?               @db.VarChar(100)
   additionalAddress       String?               @db.VarChar(100)
-  zipCode                 String
+  zipCode                 String?
   extraEmail              String?               @unique() @db.VarChar(50)
   status                  EnumUserStatus
   createdAt               DateTime              @default(now())
@@ -42,6 +42,7 @@ model User {
   changeLogs              ChangeLog[]
   groups                  Group[]
   tokens                  Token[]
+  providers               Provider[]
 }
 
 enum EnumStatusFile {
@@ -227,4 +228,13 @@ model Token {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   @@id([type, userId])
+}
+
+model Provider {
+  providerId   String           @db.VarChar(255)  @unique
+  provider     String           @db.VarChar(100)
+  userId       Int              
+  user         User             @relation(fields: [userId], references: [id])
+  accessToken  String?          @db.VarChar(255)
+  @@id([providerId, provider])
 }

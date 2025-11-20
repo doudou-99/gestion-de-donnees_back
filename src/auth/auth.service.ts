@@ -6,13 +6,17 @@ import { JwtOptionsInterface } from './interface/jwt.options.interface';
 import { EnumTokenType, Token } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { SigninGoogle } from './dto/signin.google';
+import { ProviderDto } from './dto/provider.dto';
+import { ProviderService } from './provider/provider.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    private readonly mailService: MailService
+    private readonly mailService: MailService,
+    private readonly providerService: ProviderService
   ) {}
 
   async hash(elementToHash: string): Promise<string> {
@@ -70,5 +74,31 @@ export class AuthService {
     </strong>
     `;
     this.mailService.sendEmail(email, process.env.MAIL_USERNAME, "Confirm mail", message);
+  }
+
+
+  async findUserGoogle(email: string) {
+    return await this.prisma.user.findUnique({where: {
+      email
+    }});
+  }
+
+
+  async findOrCreateUser(data: SigninGoogle) {
+    let user = await this.findUserGoogle(data.email);
+    const provider = this.providerService.findProvider(process.env.GOOGLE_CLIENT_ID, "google");
+    if (user === null) {
+      user = await this.prisma.user.create({
+        data: {
+          email: data.email,
+          status: "CONFIRMED"
+        }
+      });
+    }
+    if (provider === null) {
+      const provider: ProviderDto = {provider: "google", providerId: process.env.GOOGLE_CLIENT_ID, userId: user.id, accessToken: data.accessToken}
+      this.providerService.upsertProvider(provider);
+    }
+    return user;
   }
 }
