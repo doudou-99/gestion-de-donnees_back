@@ -301,39 +301,23 @@ export class FileService {
       select: {
         sharesGroups: {
           select: {
-            group: true,
             fileId: true,
             groupId: true,
             accessType: true,
             expirationDate: true,
-          },
-          where: {
-            fileId: idFile,
-          },
+          }
         },
         sharesUsers: {
           select: {
             accessType: true,
             fileId: true,
-            user: true,
             userId: true,
-          },
-          where: {
-            fileId: idFile,
-          },
+            expirationDate: true
+          }
         },
       },
       where: {
-        sharesGroups: {
-          some: {
-            fileId: idFile,
-          },
-        },
-        sharesUsers: {
-          some: {
-            fileId: idFile,
-          },
-        },
+        id: idFile
       },
     });
   }

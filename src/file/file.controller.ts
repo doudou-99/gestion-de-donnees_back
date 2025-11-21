@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -40,6 +42,7 @@ export class FileController {
   constructor(private readonly fileService: FileService) {}
 
   @Post('import')
+  @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     type: ResponseMessageWithData<{
       files: FileResponse[];
