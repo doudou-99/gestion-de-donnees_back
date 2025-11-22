@@ -1,7 +1,7 @@
 import { Injectable, PreconditionFailedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SharesCreateDto } from './dto/shares.create.dto';
-import { AccessReceiverUserDto } from './dto/access.receivers.dto';
+import { AccessShareDto } from './dto/access.share.dto';
 
 @Injectable()
 export class ShareService {
@@ -63,7 +63,20 @@ export class ShareService {
     }
   }
 
-  async editAccessFileUser(idFile: number, data: AccessReceiverUserDto) {
-
+  async editAccessFileUser(idFile: number, idUser: number, data: AccessShareDto) {
+    return await this.prisma.shareWithUsers.update({
+      select: {
+        fileId: true,
+        userId: true,
+        expirationDate: true,
+        accessType: true
+      },
+      data: {
+        accessType: data.accessType
+      },
+      where: {
+        fileId_userId: {fileId: idFile, userId: idUser}
+      }
+    });
   }
 }
