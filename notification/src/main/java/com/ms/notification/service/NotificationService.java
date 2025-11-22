@@ -46,7 +46,8 @@ public class NotificationService {
     @Autowired
     WebhookHandler webhookHandler;
 
-    private SimpMessagingTemplate messagingTemplate;
+    @Autowired
+    SimpMessagingTemplate messagingTemplate;
 
     @CachePut(value = "notificationsCache", key = "#request")
     public NotificationDto createNotification(CreateNotificationRequest request) {

@@ -2,9 +2,9 @@ FROM maven:3.9.11-eclipse-temurin-17-alpine AS build
 
 WORKDIR /app
 
-COPY notification/pom.xml .
+COPY pom.xml .
 # Copier tout le code source
-COPY notification/src ./src
+COPY src ./src
 
 # Build application
 RUN mvn clean package -DskipTests

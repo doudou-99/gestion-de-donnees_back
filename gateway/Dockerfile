@@ -5,9 +5,8 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 # Copy package files and prisma schema
-COPY gateway/package*.json ./
-COPY gateway/prisma ./prisma
-COPY gateway/init-db.sh ./
+COPY package*.json ./
+COPY prisma ./prisma
 
 # Install all dependencies (including devDependencies)
 RUN npm install
