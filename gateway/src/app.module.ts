@@ -10,6 +10,8 @@ import { NotificationModule } from './notification/notification.module';
 import { validate } from 'class-validator';
 import { FileModule } from './file/file.module';
 import { MailModule } from './mail/mail.module';
+import { ShareModule } from './share/share.module';
+import { GroupModule } from './group/group.module';
 
 @Module({
   imports: [
@@ -30,8 +32,11 @@ import { MailModule } from './mail/mail.module';
           servers: [`nats://${process.env.NATS_DNS}:${process.env.NATS_PORT}`],
         },
       },
+
     ]),
     NotificationModule,
+    ShareModule,
+    GroupModule
   ],
   controllers: [AppController],
   providers: [AppService],

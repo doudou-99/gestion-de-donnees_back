@@ -149,6 +149,17 @@ services:
       - SPRING_DATA_MONGODB_URI=mongodb://root:example@mongo:27017/notification_db?authSource=admin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - SPRING_MAIL_HOST=smtp.gmail.com
+      - SPRING_MAIL_PORT=587
+      - SPRING_MAIL_USERNAME=notifications.ms.gestion@gmail.com
+      - SPRING_MAIL_PASSWORD=pbps venz zjvv yccp
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_PROTOCOLS=TLSv1.2
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT=5000
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT=5000
+      
     depends_on:
       mongo:
         condition: service_healthy

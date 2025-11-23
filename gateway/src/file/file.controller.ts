@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -30,6 +32,7 @@ import {
 } from '@nestjs/swagger';
 import { FileResponse } from './responses/file.response';
 import { ResponseMessage } from '../responses/response.message';
+import { ShareGroupsUsersResponse } from './responses/shares.groups.users';
 
 @Controller('api/v1/files')
 @ApiTags('file')
@@ -39,6 +42,7 @@ export class FileController {
   constructor(private readonly fileService: FileService) {}
 
   @Post('import')
+  @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     type: ResponseMessageWithData<{
       files: FileResponse[];
@@ -180,7 +184,7 @@ export class FileController {
     };
   }
 
-  @Get("bin")
+  @Get('bin')
   @ApiQuery({
     name: 'page',
     type: 'number',
@@ -296,19 +300,18 @@ export class FileController {
     };
   }
 
-  @Delete("bin")
+  @Delete('bin')
   @ApiOkResponse({
     type: ResponseMessage,
     description: 'Response message with deleted files',
   })
   async deleteFiles(@Body() files: number[]): Promise<ResponseMessage> {
     await this.fileService.deleteFiles(files);
-    console.log("Deleted files");
+    console.log('Deleted files');
     return {
-      message: "Files deleted successfully"
-    }
+      message: 'Files deleted successfully',
+    };
   }
-  
 
   @Get('search')
   @ApiQuery({
@@ -502,14 +505,13 @@ export class FileController {
     };
   }
 
-
   @Patch(':idFile/move/bin')
   @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
   @ApiOkResponse({
     type: ResponseMessageWithData<{
       file: FileResponse;
     }>,
-    description: "Moved file to the bin with response message",
+    description: 'Moved file to the bin with response message',
   })
   async moveFileToBin(@Param('idFile', ParseIntPipe) idFile: number): Promise<
     ResponseMessageWithData<{
@@ -517,7 +519,10 @@ export class FileController {
     }>
   > {
     const file = await this.fileService.moveFileToBin(idFile);
-    console.log("🚀 ~ file.controller.ts:388 ~ FileController ~ moveFileToBin ~ file:", file);
+    console.log(
+      '🚀 ~ file.controller.ts:388 ~ FileController ~ moveFileToBin ~ file:',
+      file,
+    );
     return {
       data: { file },
       message: 'File moved to the bin',
@@ -530,7 +535,7 @@ export class FileController {
     type: ResponseMessageWithData<{
       file: FileResponse;
     }>,
-    description: "Moved file to the home with response message",
+    description: 'Moved file to the home with response message',
   })
   async moveFileToHome(@Param('idFile', ParseIntPipe) idFile: number): Promise<
     ResponseMessageWithData<{
@@ -538,10 +543,32 @@ export class FileController {
     }>
   > {
     const file = await this.fileService.moveFileToHome(idFile);
-    console.log("🚀 ~ file.controller.ts:525 ~ FileController ~ moveFileToHome ~ file:", file)
+    console.log(
+      '🚀 ~ file.controller.ts:525 ~ FileController ~ moveFileToHome ~ file:',
+      file,
+    );
     return {
       data: { file },
       message: 'File moved to the home',
+    };
+  }
+
+  @Get(':idFile/access_shares')
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      shareReceivers: any;
+    }>,
+    description: 'Users or groups that have access right to the file',
+  })
+  async getReceiversShare(@Param('idFile', ParseIntPipe) id: number): Promise<
+    ResponseMessageWithData<{
+      shareReceivers: ShareGroupsUsersResponse[];
+    }>
+  > {
+    const shareReceivers = await this.fileService.getAccessUsersGroupsFile(id);
+    return {
+      data: { shareReceivers },
+      message: 'Users or groups that have access right to the file',
     };
   }
 }

@@ -74,7 +74,7 @@ public class NotificationService {
             webhookHandler.send(notif);
         }
         messagingTemplate.convertAndSend("/topic/" + notif.getRecipientId(), notif);
-        log.debug("Notification created successfully");
+        log.debug("Notification created successfully "+notif);
         return mapToDTO(notification);
     }
 

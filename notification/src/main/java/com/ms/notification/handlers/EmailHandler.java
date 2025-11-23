@@ -3,6 +3,7 @@ package com.ms.notification.handlers;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -22,6 +23,11 @@ public class EmailHandler {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Value("${api.base-url}")
+    private String url;
+
+    @Value("${spring.mail.username}")
+    private String sender;
     
     public void sendEmail(String recipient, String subject, String body) {
 
@@ -29,6 +35,7 @@ public class EmailHandler {
         MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");        
 
         try {
+            helper.setFrom(sender);
             message.setSubject(subject);
             helper.setText(body, true);
             helper.setTo(recipient);
@@ -47,39 +54,41 @@ public class EmailHandler {
             String message) {
 
         if (type == TypeNotification.SHAREFILE && typeChannel == TypeChannel.EMAIL && content.containsKey("fileName")
-                && content.containsKey("fileId") && content.containsKey("recipient")
-                && content.containsKey("sender")) {
+                && content.containsKey("fileId") && content.containsKey("recipient")) {
             String msg = "<html><body>" + message + " of file " + content.get("fileName").toString() + " from user "
                     + content.get("recipient").toString() +
-                    "<p><a href='http://localhost:3000/api/v1/share/" + content.get("fileId")
-                    + "'>Click here to share <img src='http://localhost:3000/api/v1/notification/read/" + id
-                    + "' width='1px' height='1px' alt=''/></a></p></body></html>";
+                    "<p> <img src='"+url+"/notification/read/" + id
+                    + "' width='1px' height='1px' alt=''/></p></body></html>";
             this.sendEmail(content.get("recipient").toString(), "Share file", msg);
+            log.info("Share mail sent");
         }
         if (type == TypeNotification.EXPIRED_TOKEN && typeChannel == TypeChannel.EMAIL
                 && content.containsKey("recipient")) {
             String msg = "<html><body>" + message
-                    + " of user "+ content.get("recipient").toString() + "<p>To confirm that you have read the notification, click <a href='http://localhost:3000/api/v1/notification/read/"
+                    + " of user "+ content.get("recipient").toString() + "<p>To confirm that you have read the notification, click <a href='"+url+"/notification/read/"
                     + id + "'>here</a></p>"
                     + "</body></html>";
             this.sendEmail(content.get("recipient").toString(), "Expired token", msg);
+            log.info("Expired token email sent");
         }
         if (type == TypeNotification.ACCESSFILE && typeChannel == TypeChannel.EMAIL && content.containsKey("fileName")
                 && content.containsKey("fileId") && content.containsKey("recipient")) {
             String msg = "<html><body>" + message + " of file " + content.get("fileName").toString() + " from user "
                     + content.get("recipient").toString() +
-                    "<p><a href='http://localhost:3000/api/v1/share/access/" + content.get("fileId")
-                    + "'>Click here to  <img src='http://localhost:3000/api/v1/notification/read/" + id
+                    "<p><a href='"+url+"/share/access/" + content.get("fileId")
+                    + "'>Click here to  <img src='"+url+"/notification/read/" + id
                     + "' width='1px' height='1px' alt=''/></a></p></body></html>";
             this.sendEmail(content.get("recipient").toString(), "Access file", msg);
+            log.info("Access file email sent");
         }
         if (type == TypeNotification.JOINGROUP && typeChannel == TypeChannel.EMAIL && content.containsKey("groupName")
                 && content.containsKey("groupId") && content.containsKey("recipient")) {
             String msg = "<html><body>" + message + " of  group " + content.get("groupName").toString() + " by user "
                     + content.get("recipient").toString() +
-                    "<p>To confirm that you have read the notification, click <a href='http://localhost:3000/api/v1/notification/read/"
+                    "<p>To confirm that you have read the notification, click <a href='"+url+"/notification/read/"
                     + id + "'>here</a></p>";
             this.sendEmail(content.get("recipient").toString(), "Request to join group", msg);
+            log.info("Join email sent");
         }
     }
 }

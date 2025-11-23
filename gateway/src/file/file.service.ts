@@ -289,22 +289,66 @@ export class FileService {
       },
       where: {
         id: idFile,
-      }
+      },
     });
   }
 
+  async existsById(id: number) {
+    return await this.prisma.file.count({
+      where: {
+        id
+      }
+    }) === 1;
+  }
 
-   /**
+  async getById(id: number) {
+    return await this.prisma.file.findUniqueOrThrow({
+      where: {
+        id
+      }
+    })
+  }
+
+  /**
+   * Get all users and groups that have access to the file
+   */
+  async getAccessUsersGroupsFile(idFile: number) {
+    return await this.prisma.file.findMany({
+      select: {
+        sharesGroups: {
+          select: {
+            fileId: true,
+            groupId: true,
+            accessType: true,
+            expirationDate: true,
+          }
+        },
+        sharesUsers: {
+          select: {
+            accessType: true,
+            fileId: true,
+            userId: true,
+            expirationDate: true
+          }
+        },
+      },
+      where: {
+        id: idFile
+      },
+    });
+  }
+
+  /**
    * Delete files
    */
-    async deleteFiles(files: number[]) {
-      for (let id of files) {
-        await this.prisma.file.delete({
-          where: {
-            id,
-            status: "BIN"
-          }
-        });
-      }
+  async deleteFiles(files: number[]) {
+    for (let id of files) {
+      await this.prisma.file.delete({
+        where: {
+          id,
+          status: 'BIN',
+        },
+      });
     }
+  }
 }

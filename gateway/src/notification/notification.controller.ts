@@ -14,7 +14,7 @@ export class NotificationController {
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(AccessTokenGuard)
     @Post()
-    create(@Body() createNotificationRequest: CreateNotificationRequest, @Req() req: express.Request) {
+    create(@Body() createNotificationRequest: CreateNotificationRequest) {
       return this.notificationService.create(createNotificationRequest).pipe(
         timeout(20000),
         catchError((error) => {

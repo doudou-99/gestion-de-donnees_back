@@ -13,6 +13,14 @@ export class UserService {
     });
   }
 
+  async existsById(id: number) {
+    return await this.prisma.user.count({
+      where: {
+        id
+      }
+    }) === 1;
+  }
+
   async getById(id: number): Promise<User> {
     return await this.prisma.user.findUniqueOrThrow({
       where: { id },
