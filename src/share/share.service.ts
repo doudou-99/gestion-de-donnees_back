@@ -79,4 +79,21 @@ export class ShareService {
       }
     });
   }
+
+  async editAccessFileGroup(idFile: number, idGroup: number, data: AccessShareDto) {
+    return await this.prisma.shareWithGroups.update({
+      select: {
+        fileId: true,
+        groupId: true,
+        expirationDate: true,
+        accessType: true
+      },
+      data: {
+        accessType: data.accessType
+      },
+      where: {
+        fileId_groupId: {fileId: idFile, groupId: idGroup}
+      }
+    });
+  }
 }
