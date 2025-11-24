@@ -556,13 +556,13 @@ export class FileController {
   @Get(':idFile/access_shares')
   @ApiOkResponse({
     type: ResponseMessageWithData<{
-      shareReceivers: any;
+      shareReceivers: ShareGroupsUsersResponse;
     }>,
     description: 'Users or groups that have access right to the file',
   })
   async getReceiversShare(@Param('idFile', ParseIntPipe) id: number): Promise<
     ResponseMessageWithData<{
-      shareReceivers: ShareGroupsUsersResponse[];
+      shareReceivers: ShareGroupsUsersResponse;
     }>
   > {
     const shareReceivers = await this.fileService.getAccessUsersGroupsFile(id);
