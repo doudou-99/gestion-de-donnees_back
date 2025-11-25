@@ -16,7 +16,7 @@ import type { RequestPayload } from '../auth/interface/payload.interface';
 import { ResponseMessageWithData } from '../responses/response.message.with.data';
 import { UserEmailResponse } from './response/user.email.response';
 
-@Controller('users')
+@Controller('api/v1/users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
