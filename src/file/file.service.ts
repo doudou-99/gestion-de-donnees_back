@@ -297,7 +297,7 @@ export class FileService {
    * Get all users and groups that have access to the file
    */
   async getAccessUsersGroupsFile(idFile: number) {
-    return await this.prisma.file.findMany({
+    return await this.prisma.file.findUniqueOrThrow({
       select: {
         sharesGroups: {
           select: {
