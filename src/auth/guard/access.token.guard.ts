@@ -20,9 +20,7 @@ export class AccessTokenGuard implements CanActivate {
         throw new UnauthorizedException();
       }
       try {
-        const payload = await this.jwtService.verifyAsync(
-          token,
-          {
+      const payload = await this.jwtService.verifyAsync(token, {
             secret: process.env.SECRET_KEY
           }
         );
