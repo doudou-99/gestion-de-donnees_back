@@ -96,6 +96,7 @@ export class AuthController {
     if (!compare) {
       throw new PreconditionFailedException('Bad credentials');
     }
+    console.log(user, compare)
     const login: loginInterface = {
       id: user.id,
       email: user.email,
@@ -124,7 +125,7 @@ export class AuthController {
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,
       secure: false, //process.env.NODE_ENV === 'production',
-      sameSite: "lax",
+      sameSite: 'lax',
       path: "/",
       maxAge: 7*24*60*60*1000
 
