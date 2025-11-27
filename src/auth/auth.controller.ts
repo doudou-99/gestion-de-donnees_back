@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -27,6 +28,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UserResponse } from './interface/user.response';
+import { AccessTokenGuard } from './guard/access.token.guard';
 
 @Controller('api/v1/auth')
 @ApiTags('auth')
@@ -193,6 +195,25 @@ export class AuthController {
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created'
+    };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOkResponse({type: ResponseMessageWithData<{
+    user: User;
+  }> })
+  @UseGuards(AccessTokenGuard)
+  @Get('profile')
+  async getProfile(@Req() req: RequestPayload): Promise<
+    ResponseMessageWithData<{
+      user: User;
+    }>
+  > {
+    const user = await this.userService.getById(req.user.sub);
+    return {
+      data: { user },
+      message: 'User profile'
     };
   }
 }
