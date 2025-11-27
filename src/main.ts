@@ -12,8 +12,9 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true
   }));
-  app.use(cookieParser());
-  app.enableCors({origin: true, credentials: true})
+    app.use(cookieParser());
+  app.enableCors({ origin: true, credentials: true })
+
   const config = new DocumentBuilder()
     .setTitle('Data management')
     .setDescription('API that allows each user to manage the files and groups.')

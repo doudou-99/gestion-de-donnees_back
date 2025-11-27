@@ -15,16 +15,21 @@ import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { ResponseMessageWithData } from '../responses/response.message.with.data';
 import { loginInterface } from './interface/logininterface';
-import type { RequestPayloadWithRefresh } from './interface/payload.interface';
+import type { RequestPayload } from './interface/payload.interface';
 import { RefreshTokenGuard } from './guard/refresh.token.guard';
 import { SignupDto } from './dto/signup.dto';
 import { User } from '@prisma/client';
 import type { Response } from 'express';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserResponse } from './interface/user.response';
 
 @Controller('api/v1/auth')
-@ApiTags("auth")
+@ApiTags('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -32,7 +37,8 @@ export class AuthController {
   ) {}
 
   @HttpCode(HttpStatus.CREATED)
-  @ApiCreatedResponse({type:  ResponseMessageWithData<{
+  @ApiCreatedResponse({
+    type: ResponseMessageWithData<{
     user: UserResponse;
   }>})
   @Post('signup')
@@ -69,7 +75,10 @@ export class AuthController {
     refresh_token: string;
   }> })
   @Post('signin')
-  async signIn(@Body() body: SigninDTO, @Res({passthrough: true}) res: Response): Promise<
+  async signIn(
+    @Body() body: SigninDTO,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<
     ResponseMessageWithData<{
       user: loginInterface;
       access_token: string;
@@ -108,8 +117,18 @@ export class AuthController {
       },
     );
 
-    await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"})
+    await this.authService.upsertToken(
+      user.id,
+      await this.authService.hash(refresh_token),
+    );
+    res.cookie('refreshToken', refresh_token, {
+      httpOnly: true,
+      secure: false, //process.env.NODE_ENV === 'production',
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7*24*60*60*1000
+
+    });
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected'
@@ -118,13 +137,17 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOkResponse({type: ResponseMessageWithData<{
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
     access_token: string;
     refresh_token: string;
   }> })
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
-  async refresh(@Req() req: RequestPayloadWithRefresh, @Res({passthrough: true}) res: Response): Promise<
+  async refresh(
+    @Req() req: RequestPayload,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<
     ResponseMessageWithData<{
       access_token: string;
       refresh_token: string;
@@ -132,7 +155,10 @@ export class AuthController {
   > {
     const user = await this.userService.getById(req.user.sub);
     const tokenDB = await this.authService.findUniqueToken(req.user.sub);
-    const compare = await this.authService.compare(tokenDB.token, req.refresh_token);
+    const compare = await this.authService.compare(
+      tokenDB.token,
+      req.cookies['refreshToken'],
+    );
     if (!compare) {
         throw new UnauthorizedException();
     }
@@ -151,8 +177,18 @@ export class AuthController {
         expiresIn: '15m',
       },
     );
-    await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"});
+    await this.authService.upsertToken(
+      user.id,
+      await this.authService.hash(refresh_token),
+    );
+    res.cookie('refreshToken', refresh_token, {
+      httpOnly: true,
+      secure: false, //process.env.NODE_ENV === 'production',
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7*24*60*60*1000
+
+    });
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created'
