@@ -8,12 +8,13 @@ import { ConfigModule } from '@nestjs/config';
 import { FileModule } from './file/file.module';
 import { validate } from './env.validation';
 import { ShareModule } from './share/share.module';
+import { GroupModule } from './group/group.module';
 
 @Module({
   imports: [UserModule, PrismaModule, AuthModule, MailModule, ConfigModule.forRoot({
     isGlobal: true,
     validate
-  }), FileModule, ShareModule],
+  }), FileModule, ShareModule, GroupModule],
   providers: [AppService],
 })
 export class AppModule {}
