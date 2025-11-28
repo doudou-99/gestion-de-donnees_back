@@ -4,7 +4,7 @@ import { fakerFR as faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
-const upsertUser = async () => {
+const upsertData = async () => {
   const pass = faker.internet.password({
     pattern: /^[A-Za-z0-9*.!@#$%^&(){}[]:;<>,.?\/~_+-=|\]*$/,
   });
@@ -23,11 +23,21 @@ const upsertUser = async () => {
     },
   });
   console.log(user, pass);
+
+  const group = await prisma.group.upsert({
+    where: { id: faker.number.int() },
+    update: {},
+    create: {
+      name: faker.string.alphanumeric(5),
+      leaderId: user.id
+    },
+  });
+  console.log(group);
 };
 
 const main = async (nbUser: number) => {
   for (let i = 0; i < nbUser; i++) {
-    await upsertUser();
+    await upsertData();
   }
 };
 
