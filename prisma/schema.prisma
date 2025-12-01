@@ -25,9 +25,6 @@ model User {
   username                String                @db.VarChar(50)
   email                   String                @unique() @db.VarChar(50)
   password                String                @db.VarChar(100)
-  address                 String                @db.VarChar(100)
-  additionalAddress       String?               @db.VarChar(100)
-  zipCode                 String
   extraEmail              String?               @unique() @db.VarChar(50)
   status                  EnumUserStatus
   createdAt               DateTime              @default(now())
@@ -61,25 +58,17 @@ model File {
   mimeType        String           @db.VarChar(255)
   status          EnumStatusFile? 
   shareUrl        String?          @db.VarChar(255)  
-  editFile        EnumEditFile?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   parent          File?            @relation(name: "parent", fields: [parentId], references: [id])  
   parentId        Int?             @unique
   version         String?          @db.VarChar(255)
-  filePermission  String?          @db.VarChar(255)
   fileRequests    FileRequest[]
-  messages        Contains[]
   accessLogs      AccessLog[]
   changeLogs      ChangeLog[]
   childs          File[]           @relation(name: "parent")
   sharesUsers ShareWithUsers[]
   sharesGroups ShareWithGroups[]
-}
-
-enum EnumEditFile {
-  DATEFILE
-  USEREDIT
 }
 
 model Group {
@@ -103,16 +92,16 @@ model MemberGroup {
 }
 
 model FileRequest {
-  id            Int             @id @default(autoincrement()) 
-  typeRequest   EnumTypeRequest
   senderId      Int
   sender        User            @relation(fields: [senderId], references: [id])
   fileId        Int
   file          File            @relation(fields: [fileId], references: [id])
   groupId       Int
   group         Group           @relation(fields: [groupId], references: [id])
+  typeRequest   EnumTypeRequest
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  @@id([senderId, fileId, groupId])
 }
 
 enum EnumTypeRequest {
@@ -131,18 +120,7 @@ model Message {
   group         Group           @relation(fields: [groupId], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  files         Contains[]
 }
-
-model Contains {
-  idMessage    Int           
-  message      Message         @relation(fields: [idMessage], references: [id])
-  idFile       Int      
-  file         File            @relation(fields: [idFile], references: [id])
-  @@id([idMessage, idFile])
-}
-  
-
 model ShareWithUsers {
   fileId             Int      
   file               File              @relation(fields: [fileId], references: [id])
@@ -182,28 +160,28 @@ enum EnumStatusShare {
 }
 
 model AccessLog {
-  id              Int                   @id @default(autoincrement()) 
-  startDate       DateTime              @default(now())
-  endDate         DateTime              @default(now())
   fileId          Int
   file            File                  @relation(fields: [fileId], references: [id])
   userId          Int
   user            User                  @relation(fields: [userId], references: [id])
+  startDate       DateTime              @default(now())
+  endDate         DateTime              @default(now())
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
+  @@id([fileId, userId])
 }
 
 model ChangeLog {
-  id                    Int                   @id @default(autoincrement())
-  numeroVersion         Int
-  content               String                @db.Text()
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
   fileId                Int
   file                  File                  @relation(fields: [fileId], references: [id])
   userId                Int
   user                  User                  @relation(fields: [userId], references: [id])
+  numeroVersion         Int
+  content               String                @db.Text()
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
   actionType            EnumActionType
+  @@id([fileId, userId])
 }
 
 enum EnumActionType {
@@ -226,5 +204,5 @@ model Token {
   expiresAt   DateTime? 
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-  @@id([type, userId])
+  @@id([token, userId])
 }
