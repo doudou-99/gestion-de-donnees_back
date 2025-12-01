@@ -34,7 +34,6 @@ model User {
   memberGroups            MemberGroup[]
   messages                Message[]  
   shares_with_users       ShareWithUsers[]
-  shares_with_groups      ShareWithGroups[]
   accessLogs              AccessLog[]
   changeLogs              ChangeLog[]
   groups                  Group[]
@@ -81,6 +80,7 @@ model Group {
   messages                Message[]
   createdAt               DateTime              @default(now())
   updatedAt               DateTime              @updatedAt
+  shareGroups             ShareWithGroups[]
 }
 
 model MemberGroup {
@@ -138,14 +138,14 @@ model ShareWithUsers {
 model ShareWithGroups {
   fileId             Int      
   file               File            @relation(fields: [fileId], references: [id])
-  userId             Int
-  user               User            @relation(fields: [userId], references: [id])
+  groupId            Int
+  group              Group           @relation(fields: [groupId], references: [id])
   accessType         EnumAccessType
   expirationDate     DateTime?
   status             EnumStatusShare?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
-  @@id([fileId, userId])
+  @@id([fileId, groupId])
 }
 
 enum EnumAccessType {
