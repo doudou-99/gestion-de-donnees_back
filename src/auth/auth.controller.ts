@@ -157,7 +157,7 @@ export class AuthController {
     }>
   > {
     const user = await this.userService.getById(req.user.sub);
-    const tokenDB = await this.authService.findUniqueToken(req.user.sub);
+    const tokenDB = await this.authService.findUniqueToken(req.user.sub, req.cookies["refreshToken"]);
     const compare = await this.authService.compare(
       tokenDB.token,
       req.cookies['refreshToken'],
