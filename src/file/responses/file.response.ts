@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { EnumEditFile, EnumStatusFile, File } from "@prisma/client";
+import { EnumStatusFile, File } from "@prisma/client";
 
 export class FileResponse implements Partial<File>{
     @ApiProperty()
@@ -34,9 +34,6 @@ export class FileResponse implements Partial<File>{
 
     @ApiProperty()
     updatedAt: Date;
-
-    @ApiProperty({required: false, enum: EnumEditFile})
-    editFile?: EnumEditFile;
 
     @ApiProperty({required: false})
     version?: string;    
