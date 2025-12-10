@@ -34,7 +34,7 @@ export class AuthService {
   async generateToken(payload: PayloadInterface, options: JwtOptionsInterface): Promise<string> {
     const optionsJWT: JwtSignOptions = {
       ...options,
-      expiresIn: options.expiresIn
+      expiresIn: options.expiresIn as any
     }
     return await this.jwtService.signAsync(payload, optionsJWT);
   }
