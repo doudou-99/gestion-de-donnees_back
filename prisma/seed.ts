@@ -15,10 +15,7 @@ const upsertData = async () => {
       email: faker.internet.email({ allowSpecialCharacters: true }),
       password: await argon2.hash(pass),
       username: faker.internet.username(),
-      address: faker.location.streetAddress(),
       status: 'CONFIRMED',
-      additionalAddress: faker.location.secondaryAddress(),
-      zipCode: faker.location.zipCode(),
       extraEmail: faker.internet.email({ allowSpecialCharacters: true }),
     },
   });

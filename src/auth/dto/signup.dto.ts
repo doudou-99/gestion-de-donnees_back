@@ -21,25 +21,7 @@ export class SignupDto {
       minSymbols: 1,         
       minUppercase: 1    
     })    
-    password: string;    
-    
-    @ApiProperty({required: true, minLength:5})
-    @IsString()     
-    @IsNotEmpty()     
-    @Length(5)     
-    address: string;      
-    
-    @ApiProperty({required: false, minLength: 5})
-    @IsString()     
-    @IsNotEmpty()     
-    @Length(5)     
-    @IsOptional()     
-    additionalAddress?: string;       
-    
-    @ApiProperty({required: true})
-    @IsNotEmpty()     
-    @IsString()    
-    zipCode: string;       
+    password: string;        
   
     @ApiProperty({required: false})
     @IsEmail()     

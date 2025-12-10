@@ -157,11 +157,15 @@ export class AuthController {
     }>
   > {
     const user = await this.userService.getById(req.user.sub);
-    const tokenDB = await this.authService.findUniqueToken(req.user.sub);
+    const tokenDB = await this.authService.findUniqueToken(req.user.sub, req.cookies["refreshToken"]);
+    console.log("🚀 ~ auth.controller.ts:161 ~ AuthController ~ refresh ~ tokenDB:", tokenDB)
+
     const compare = await this.authService.compare(
       tokenDB.token,
       req.cookies['refreshToken'],
     );
+    console.log("🚀 ~ auth.controller.ts:165 ~ AuthController ~ refresh ~ compare:", compare)
+
     if (!compare) {
         throw new UnauthorizedException();
     }
