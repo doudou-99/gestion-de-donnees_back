@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 const upsertData = async () => {
   const pass = faker.internet.password({
-    pattern: /^[A-Za-z0-9*.!@#$%^&(){}[]:;<>,.?\/~_+-=|\]*$/,
+    pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=(?:.*[0-9]){2})(?=.*[-!$%^&*()_+|~=`{}\[\]:";'<>?,.\/]).+$/,
   });
   const user = await prisma.user.upsert({
     where: { email: faker.internet.email() },

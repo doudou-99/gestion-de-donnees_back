@@ -51,6 +51,7 @@ export class AuthController {
   > {
     body.password = await this.authService.hash(body.password);
     const user = await this.userService.create(body);
+    console.log("🚀 ~ auth.controller.ts:54 ~ AuthController ~ signUp ~ user:", user)
 
     //Confirm token
     const confirm_token = await this.authService.generateToken(
@@ -120,9 +121,11 @@ export class AuthController {
       },
     );
 
+    const hashedRefresh = await this.authService.hash(refresh_token);
+
     await this.authService.upsertToken(
       user.id,
-      await this.authService.hash(refresh_token),
+      hashedRefresh
     );
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,
@@ -130,8 +133,8 @@ export class AuthController {
       sameSite: 'lax',
       path: "/",
       maxAge: 7*24*60*60*1000
-
     });
+
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected'
@@ -184,9 +187,12 @@ export class AuthController {
         expiresIn: '15m',
       },
     );
+
+    const hashedRefresh = await this.authService.hash(refresh_token);
+
     await this.authService.upsertToken(
       user.id,
-      await this.authService.hash(refresh_token),
+      hashedRefresh
     );
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,
@@ -194,7 +200,6 @@ export class AuthController {
       sameSite: "lax",
       path: "/",
       maxAge: 7*24*60*60*1000
-
     });
     return {
       data: { access_token, refresh_token },

@@ -31,12 +31,12 @@ export class AuthService {
     }
   }
 
-  async generateToken(payload: PayloadInterface, options: JwtOptionsInterface) {
-    const jwtOptions: JwtSignOptions = {
-    ...options,
-    expiresIn: options.expiresIn as any,
-  };
-    return await this.jwtService.signAsync(payload, jwtOptions);
+  async generateToken(payload: PayloadInterface, options: JwtOptionsInterface): Promise<string> {
+    const optionsJWT: JwtSignOptions = {
+      ...options,
+      expiresIn: options.expiresIn as any
+    }
+    return await this.jwtService.signAsync(payload, optionsJWT);
   }
 
   async upsertToken(
@@ -52,17 +52,24 @@ export class AuthService {
         type,
         expiresAt,
       },
-      where: {token_userId: { token, userId } },
+      where: { token_userId: { token, userId } },
       update: { token, expiresAt },
     });
   }
 
-  async findUniqueToken(userId: number, token: string): Promise<Token> {
-    return this.prisma.token.findUniqueOrThrow({
-        where: {
-          token_userId: {token, userId}
-        }
+  async findUniqueToken(userId: number, tokenClear: string): Promise<Token> {
+    const tokens = await this.prisma.token.findMany({
+      where: {userId: userId}
     });
+    for (let t of tokens) {
+      console.log("🚀 ~ auth.service.ts:65 ~ AuthService ~ findUniqueToken ~ t:", t);
+      const compareToken = await this.compare(t.token, tokenClear);
+      if (compareToken) {
+        console.log("🚀 ~ auth.service.ts:67 ~ AuthService ~ findUniqueToken ~ this.compare(t.token, tokenClear):", this.compare(t.token, tokenClear));
+        return t;
+      }
+    }
+    return null;
   }
 
   async sendConfirmEmail(email: string, token: string) {

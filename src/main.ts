@@ -10,9 +10,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter())
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true
+    whitelist: true,
+    exceptionFactory: (errors) => {
+      console.log(errors)
+    } 
   }));
-    app.use(cookieParser());
+  app.use(cookieParser());
   app.enableCors({ origin: true, credentials: true })
 
   const config = new DocumentBuilder()
