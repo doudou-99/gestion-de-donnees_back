@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { File } from '@prisma/client';
 import { importDto } from './dto/import.dto';
+import { RenameFileDto } from './dto/rename.file.dto';
 
 export type Sort = 'name' | 'updatedAt';
 export type Order = 'ASC' | 'DESC';
@@ -320,6 +321,20 @@ export class FileService {
         id: idFile
       },
     });
+  }
+
+
+  /**
+   * Rename file with a new name
+   */
+  async renameFile(id: number, data: RenameFileDto) {
+    console.log(data)
+    return await this.prisma.file.update({
+      data: { name: data.name, path: "/"+data.name},
+      where: {
+        id
+      }
+    })
   }
 
   /**
