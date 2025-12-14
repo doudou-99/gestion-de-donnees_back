@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
@@ -33,6 +34,7 @@ import {
 import { FileResponse } from './responses/file.response';
 import { ResponseMessage } from '../responses/response.message';
 import { ShareGroupsUsersResponse } from './responses/shares.groups.users';
+import { RenameFileDto } from './dto/rename.file.dto';
 
 @Controller('api/v1/files')
 @ApiTags('file')
@@ -550,6 +552,32 @@ export class FileController {
     return {
       data: { file },
       message: 'File moved to the home',
+    };
+  }
+
+
+  @Patch(':idFile/rename')
+  @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      file: FileResponse;
+    }>,
+    description: 'Renamed file',
+  })
+  async renameFile(@Param('idFile', ParseIntPipe) idFile: number, @Body() body: RenameFileDto): Promise<
+    ResponseMessageWithData<{
+      file: File;
+    }>
+  > {
+    const file = await this.fileService.renameFile(idFile, body);
+    if (file === null) {
+      throw new NotFoundException()
+    }
+    console.log("🚀 ~ file.controller.ts:572 ~ FileController ~ renameFile ~ file:", file)
+
+    return {
+      data: { file },
+      message: 'Renamed file',
     };
   }
 
