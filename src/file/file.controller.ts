@@ -599,4 +599,24 @@ export class FileController {
       message: 'Users or groups that have access right to the file',
     };
   }
+
+  @Get(':idFile')
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      file: FileResponse
+    }>,
+    description: 'File details displayed successfully',
+  })
+  async getDetailsFile(@Param('idFile', ParseIntPipe) id: number): Promise<
+    ResponseMessageWithData<{
+      file: FileResponse
+    }>
+  > {
+    const file = await this.fileService.detailsFile(id);
+    console.log("🚀 ~ file.controller.ts:616 ~ FileController ~ getDetailsFile ~ file:", file)
+    return {
+      data: { file },
+      message: 'File details displayed successfully',
+    };
+  }
 }

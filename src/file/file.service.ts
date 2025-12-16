@@ -338,6 +338,18 @@ export class FileService {
   }
 
   /**
+   * Get the details of the file
+   * @param id File id
+   */
+  async detailsFile(id: number) {
+    return await this.prisma.file.findUniqueOrThrow({
+      where: {
+        id
+      }
+    })
+  }
+
+  /**
    * Delete files
    */
   async deleteFiles(files: number[]) {

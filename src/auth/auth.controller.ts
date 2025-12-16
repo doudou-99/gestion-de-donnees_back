@@ -50,6 +50,7 @@ export class AuthController {
     }>
   > {
     body.password = await this.authService.hash(body.password);
+    if (body.extraEmail === undefined || body.extraEmail === "") body.extraEmail = undefined;
     const user = await this.userService.create(body);
     console.log("🚀 ~ auth.controller.ts:54 ~ AuthController ~ signUp ~ user:", user)
 
