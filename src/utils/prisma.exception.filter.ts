@@ -16,6 +16,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
             path: request.url,
         }
         let message = "";
+        console.log(exception.stack)
         switch(exception.code) {
             case "P2002":
                 body.status = HttpStatus.PRECONDITION_FAILED

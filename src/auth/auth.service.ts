@@ -43,8 +43,10 @@ export class AuthService {
     userId: number,
     token: string,
     type: EnumTokenType = 'REFRESHTOKEN',
+    ancienToken?: string,
     expiresAt?: Date,
   ): Promise<void> {
+    const tokenJSON = ancienToken ? {token:ancienToken, userId} :  {token, userId}
     await this.prisma.token.upsert({
       create: {
         token,
@@ -52,7 +54,7 @@ export class AuthService {
         type,
         expiresAt,
       },
-      where: { token_userId: { token, userId } },
+      where: { token_userId: tokenJSON, type },
       update: { token, expiresAt },
     });
   }

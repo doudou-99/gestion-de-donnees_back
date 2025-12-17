@@ -4,8 +4,10 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   PreconditionFailedException,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -29,6 +31,7 @@ import {
 } from '@nestjs/swagger';
 import { UserResponse } from './interface/user.response';
 import { AccessTokenGuard } from './guard/access.token.guard';
+import { ConfirmTokenGuard } from './guard/confirm.token.guard';
 
 @Controller('api/v1/auth')
 @ApiTags('auth')
@@ -68,6 +71,41 @@ export class AuthController {
     return {
       data: { user },
       message: 'The user is created'
+    };
+  }
+
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ConfirmTokenGuard)
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      user: UserResponse
+  }>})
+  @Get('confirm/:token')
+  async confirm(@Req() req: RequestPayload, @Param("token") token: string): Promise<
+    ResponseMessageWithData<{
+      user: User;
+    }>
+  > {
+    const tokenDB = await this.authService.findUniqueToken(req.user.sub, token);
+    if (tokenDB.type !== 'ACTIVATEACCOUNT') {
+      throw new PreconditionFailedException("Incorrect token");
+    }
+    const compare = await this.authService.compare(tokenDB.token, token);
+    console.log("🚀 ~ auth.controller.ts:92 ~ AuthController ~ confirm ~ compare:", compare)
+
+    let user = await this.userService.getById(req.user.sub);
+    console.log("🚀 ~ auth.controller.ts:98 ~ AuthController ~ confirm ~ user:", user)
+
+    if (user.status !== "NOT_CONFIRMED") {
+      throw new PreconditionFailedException("Incorrect user status");
+    }
+    user = await this.userService.updateUser(req.user.sub, {status: "CONFIRMED"});
+    console.log("🚀 ~ auth.controller.ts:104 ~ AuthController ~ confirm ~ user:", user)
+
+    return {
+      data: { user },
+      message: 'The user confirmed the account'
     };
   }
 
@@ -193,7 +231,9 @@ export class AuthController {
 
     await this.authService.upsertToken(
       user.id,
-      hashedRefresh
+      hashedRefresh,
+      "REFRESHTOKEN",
+      tokenDB.token
     );
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,

@@ -10,9 +10,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
-import { User } from '@prisma/client';
 import { AccessTokenGuard } from '../auth/guard/access.token.guard';
-import type { RequestPayload } from '../auth/interface/payload.interface';
 import { ResponseMessageWithData } from '../responses/response.message.with.data';
 import { UserEmailResponse } from './response/user.email.response';
 
