@@ -5,17 +5,16 @@ import { HttpExceptionFilter } from './utils/http.exception.filter';
 import { PrismaExceptionFilter } from './utils/prisma.exception.filter';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter())
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    exceptionFactory: (errors) => {
-      console.log(errors)
-    } 
+    whitelist: true
   }));
   app.use(cookieParser());
+  app.use('/favicon.ico', (req: Request, res: Response) => res.status(204).end());
   app.enableCors({ origin: true, credentials: true })
 
   const config = new DocumentBuilder()
