@@ -7,7 +7,7 @@ stage-1:
   image: node:20           
   stage: test                 
   services:                      
-    - docker:dind
+    - docker:stable
   cache:
     paths:
       - node_modules/
