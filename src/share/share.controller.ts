@@ -2,6 +2,7 @@ import {
     BadRequestException,
     Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -20,6 +21,7 @@ import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagge
 import type { RequestPayload } from '../auth/interface/payload.interface';
 import { ShareAccessUserResponse, ShareAccessGroupResponse } from './response/share.access.response';
 import { AccessShareDto } from './dto/access.share.dto';
+import { ReceiversResponse } from './response/share.receiver.response';
 
 @Controller('api/v1/shares')
 @UseGuards(AccessTokenGuard)
@@ -103,4 +105,29 @@ export class ShareController {
       message: 'Change of the access type of the group that have access right to the file completed successfully'
     };
   }
+
+
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      receivers: ReceiversResponse
+    }>,
+    description: 'Users and groups list',
+  })
+  @ApiBearerAuth()
+  @Get('receivers')
+  async getReceivers(): Promise<
+    ResponseMessageWithData<{
+      receivers: ReceiversResponse
+    }>
+  > {
+    const receivers = await this.shareService.getReceivers();
+    console.log("🚀 ~ share.controller.ts:124 ~ ShareController ~ getReceivers ~ receivers:", receivers)
+
+    return {
+      data: { receivers },
+      message: 'Users and groups list'
+    };
+  }
+
 }

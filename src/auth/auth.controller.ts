@@ -77,16 +77,9 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @UseGuards(ConfirmTokenGuard)
-  @ApiOkResponse({
-    type: ResponseMessageWithData<{
-      user: UserResponse
-  }>})
+  @ApiOkResponse()
   @Get('confirm/:token')
-  async confirm(@Req() req: RequestPayload, @Param("token") token: string): Promise<
-    ResponseMessageWithData<{
-      user: User;
-    }>
-  > {
+  async confirm(@Req() req: RequestPayload, @Param("token") token: string, @Res() res: Response) {
     const tokenDB = await this.authService.findUniqueToken(req.user.sub, token);
     if (tokenDB.type !== 'ACTIVATEACCOUNT') {
       throw new PreconditionFailedException("Incorrect token");
@@ -103,10 +96,7 @@ export class AuthController {
     user = await this.userService.updateUser(req.user.sub, {status: "CONFIRMED"});
     console.log("🚀 ~ auth.controller.ts:104 ~ AuthController ~ confirm ~ user:", user)
 
-    return {
-      data: { user },
-      message: 'The user confirmed the account'
-    };
+    res.redirect(process.env.FRONT_URL+"/confirmation")
   }
 
 

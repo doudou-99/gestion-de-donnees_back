@@ -1,5 +1,5 @@
 import { EnumAccessType } from "@prisma/client";
-import { IsArray, IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsDateString, IsEnum, IsNotEmpty, IsOptional } from "class-validator";
 
 export class SharesCreateDto {
     @IsArray()
