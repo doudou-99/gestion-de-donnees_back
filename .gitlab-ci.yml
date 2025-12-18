@@ -1,0 +1,16 @@
+build_back:  
+  image: docker:stable           
+  stage: build                  
+  services:                      
+    - docker:dind
+  before_script:                 
+    - echo "Préparation..."
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:                        
+    - echo "Exécution..."
+    - docker build -t $CI_REGISTRY_IMAGE:$TAG_PROD .
+    - docker push $CI_REGISTRY_IMAGE:$TAG_PROD
+  after_script:                  
+    - echo "Nettoyage..."
+  rules:                         
+    - when: manual                   
