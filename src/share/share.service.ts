@@ -96,4 +96,26 @@ export class ShareService {
       }
     });
   }
+
+  /**
+   * 
+   * @returns the list of users and groups
+   */
+  async getReceivers() {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true
+      }
+    });
+    const groups = await this.prisma.group.findMany({
+      select: {
+        id: true,
+        name: true
+      }
+    });
+    return {
+      users, groups
+    }
+  }
 }
