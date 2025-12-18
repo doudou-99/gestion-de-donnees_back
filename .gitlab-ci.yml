@@ -1,21 +1,23 @@
 stages:
-  - test
+  - build
   - deploy
 
 
 stage-1:  
-  image: node:20           
-  stage: test                 
-  cache:
-    paths:
-      - node_modules/
+  image: docker:stable           
+  stage: build                
+  services:                      
+    - docker:dind
+  before_script:                 
+    - echo "Préparation..."
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:                        
     - echo "Exécution..."
-    - npm i
-    - npm run test
+    - docker build -t $CI_REGISTRY_IMAGE:$TAG_TEST .
+    - docker push $CI_REGISTRY_IMAGE:$TAG_TEST
   rules:                         
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - when: manual    
+    - when: manual      
 
 stage-2:  
   image: docker:stable           
