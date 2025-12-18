@@ -6,14 +6,9 @@ stages:
 stage-1:  
   image: node:20           
   stage: test                 
-  services:                      
-    - docker:stable
   cache:
     paths:
       - node_modules/
-  before_script:                 
-    - echo "Préparation..."
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:                        
     - echo "Exécution..."
     - npm i
