@@ -13,4 +13,5 @@ build_back:
   after_script:                  
     - echo "Nettoyage..."
   rules:                         
+    - if: $CI_COMMIT_BRANCH == "develop"
     - when: manual                   
