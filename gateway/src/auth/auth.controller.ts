@@ -4,8 +4,10 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   PreconditionFailedException,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -16,20 +18,23 @@ import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { ResponseMessageWithData } from '../responses/response.message.with.data';
 import { loginInterface } from './interface/logininterface';
-import type { RequestPayload, RequestPayloadWithRefresh } from './interface/payload.interface';
+import type { RequestPayload } from './interface/payload.interface';
 import { RefreshTokenGuard } from './guard/refresh.token.guard';
 import { SignupDto } from './dto/signup.dto';
 import { User } from '@prisma/client';
 import type { Response } from 'express';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserResponse } from './interface/user.response';
 import { AccessTokenGuard } from './guard/access.token.guard';
-import { TypeChannel } from '../notification/enums/EnumTypeChannel';
-import { TypeNotification } from '../notification/enums/EnumTypeNotification';
-import { TypeRecipient } from '../notification/enums/EnumTypeRecipient';
+import { ConfirmTokenGuard } from './guard/confirm.token.guard';
 
 @Controller('api/v1/auth')
-@ApiTags("auth")
+@ApiTags('auth')
 export class AuthController {
   jwtService: any;
   notificationService: any;
@@ -39,7 +44,8 @@ export class AuthController {
   ) {}
 
   @HttpCode(HttpStatus.CREATED)
-  @ApiCreatedResponse({type:  ResponseMessageWithData<{
+  @ApiCreatedResponse({
+    type: ResponseMessageWithData<{
     user: UserResponse;
   }>})
   @Post('signup')
@@ -49,7 +55,9 @@ export class AuthController {
     }>
   > {
     body.password = await this.authService.hash(body.password);
+    if (body.extraEmail === undefined || body.extraEmail === "") body.extraEmail = undefined;
     const user = await this.userService.create(body);
+    console.log("🚀 ~ auth.controller.ts:54 ~ AuthController ~ signUp ~ user:", user)
 
     //Confirm token
     const confirm_token = await this.authService.generateToken(
@@ -70,13 +78,41 @@ export class AuthController {
 
 
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ConfirmTokenGuard)
+  @ApiOkResponse()
+  @Get('confirm/:token')
+  async confirm(@Req() req: RequestPayload, @Param("token") token: string, @Res() res: Response) {
+    const tokenDB = await this.authService.findUniqueToken(req.user.sub, token);
+    if (tokenDB.type !== 'ACTIVATEACCOUNT') {
+      throw new PreconditionFailedException("Incorrect token");
+    }
+    const compare = await this.authService.compare(tokenDB.token, token);
+    console.log("🚀 ~ auth.controller.ts:92 ~ AuthController ~ confirm ~ compare:", compare)
+
+    let user = await this.userService.getById(req.user.sub);
+    console.log("🚀 ~ auth.controller.ts:98 ~ AuthController ~ confirm ~ user:", user)
+
+    if (user.status !== "NOT_CONFIRMED") {
+      throw new PreconditionFailedException("Incorrect user status");
+    }
+    user = await this.userService.updateUser(req.user.sub, {status: "CONFIRMED"});
+    console.log("🚀 ~ auth.controller.ts:104 ~ AuthController ~ confirm ~ user:", user)
+
+    res.redirect(process.env.FRONT_URL+"/confirmation")
+  }
+
+
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({type: ResponseMessageWithData<{
     user: loginInterface;
     access_token: string;
     refresh_token: string;
   }> })
   @Post('signin')
-  async signIn(@Body() body: SigninDTO, @Res({passthrough: true}) res: Response): Promise<
+  async signIn(
+    @Body() body: SigninDTO,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<
     ResponseMessageWithData<{
       user: loginInterface;
       access_token: string;
@@ -94,6 +130,7 @@ export class AuthController {
     if (!compare) {
       throw new PreconditionFailedException('Bad credentials');
     }
+    console.log(user, compare)
     const login: loginInterface = {
       id: user.id,
       email: user.email,
@@ -115,8 +152,20 @@ export class AuthController {
       },
     );
 
-    await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"})
+    const hashedRefresh = await this.authService.hash(refresh_token);
+
+    await this.authService.upsertToken(
+      user.id,
+      hashedRefresh
+    );
+    res.cookie('refreshToken', refresh_token, {
+      httpOnly: true,
+      secure: false, //process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: "/",
+      maxAge: 7*24*60*60*1000
+    });
+
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected'
@@ -125,21 +174,32 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOkResponse({type: ResponseMessageWithData<{
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
     access_token: string;
     refresh_token: string;
   }> })
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
-  async refresh(@Req() req: RequestPayloadWithRefresh, @Res({passthrough: true}) res: Response): Promise<
+  async refresh(
+    @Req() req: RequestPayload,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<
     ResponseMessageWithData<{
       access_token: string;
       refresh_token: string;
     }>
   > {
     const user = await this.userService.getById(req.user.sub);
-    const tokenDB = await this.authService.findUniqueToken(req.user.sub);
-    const compare = await this.authService.compare(tokenDB.token, req.refresh_token);
+    const tokenDB = await this.authService.findUniqueToken(req.user.sub, req.cookies["refreshToken"]);
+    console.log("🚀 ~ auth.controller.ts:161 ~ AuthController ~ refresh ~ tokenDB:", tokenDB)
+
+    const compare = await this.authService.compare(
+      tokenDB.token,
+      req.cookies['refreshToken'],
+    );
+    console.log("🚀 ~ auth.controller.ts:165 ~ AuthController ~ refresh ~ compare:", compare)
+
     if (!compare) {
         throw new UnauthorizedException();
     }
@@ -158,8 +218,22 @@ export class AuthController {
         expiresIn: '15m',
       },
     );
-    await this.authService.upsertToken(user.id, await this.authService.hash(refresh_token));
-    res.cookie("refreshToken", refresh_token, {httpOnly: true, secure: process.env.NODE_ENV === "production"});
+
+    const hashedRefresh = await this.authService.hash(refresh_token);
+
+    await this.authService.upsertToken(
+      user.id,
+      hashedRefresh,
+      "REFRESHTOKEN",
+      tokenDB.token
+    );
+    res.cookie('refreshToken', refresh_token, {
+      httpOnly: true,
+      secure: false, //process.env.NODE_ENV === 'production',
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7*24*60*60*1000
+    });
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created'
@@ -167,18 +241,21 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOkResponse({type: ResponseMessageWithData<{
+    user: User;
+  }> })
   @UseGuards(AccessTokenGuard)
   @Get('profile')
-  async get(@Req() req: RequestPayload): Promise<
-   User> {
+  async getProfile(@Req() req: RequestPayload): Promise<
+    ResponseMessageWithData<{
+      user: User;
+    }>
+  > {
     const user = await this.userService.getById(req.user.sub);
-    const t = this.jwtService.decode(req.headers.authorization.split(" ")[1]);
-    if (t?.exp) {
-      let metadata: any = JSON.stringify({"recipient": user.email})
-      this.notificationService.create({message:"Expired token", metadata,
-        recipientId: user.id, recipientType: TypeRecipient.USER, type: TypeNotification.EXPIRED_TOKEN, typeChannel: TypeChannel.PUSH})
-      }
-    return user;
+    return {
+      data: { user },
+      message: 'User profile'
+    };
   }
-
 }

@@ -3,6 +3,8 @@
 /node_modules
 /build
 prisma/migrations
+/gateway
+/ms_chat
 
 # Logs
 logs

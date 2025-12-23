@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, MessageEvent, Param, ParseIntPipe, Patch, Post, Req, Sse, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationRequest } from './dto/create.notification.request';
-import { timeout, catchError, throwError } from 'rxjs';
-import express from 'express';
+import { timeout, catchError, throwError, interval, map, Observable, merge } from 'rxjs';
 import { AccessTokenGuard } from '../auth/guard/access.token.guard';
 import type { RequestPayload } from '../auth/interface/payload.interface';
+import type { Request } from 'express';
 
 @Controller('api/v1/notification')
 export class NotificationController {
@@ -26,6 +26,17 @@ export class NotificationController {
             ),
           );
         }),
+      );
+    }
+
+    @Sse("events/:id")
+    events(@Req() req: RequestPayload, @Param("id", ParseIntPipe) id: number): Observable<MessageEvent> {
+      return merge(
+        // Notifications en temps réel
+        this.notificationService.subscribe(id),
+        interval(2000).pipe(
+          map(() => ({ data: { type: 'heartbeat', timestamp: new Date().toISOString() } }))
+        )
       );
     }
   

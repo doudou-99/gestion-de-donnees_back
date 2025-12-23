@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
@@ -33,6 +34,7 @@ import {
 import { FileResponse } from './responses/file.response';
 import { ResponseMessage } from '../responses/response.message';
 import { ShareGroupsUsersResponse } from './responses/shares.groups.users';
+import { RenameFileDto } from './dto/rename.file.dto';
 
 @Controller('api/v1/files')
 @ApiTags('file')
@@ -553,22 +555,68 @@ export class FileController {
     };
   }
 
+
+  @Patch(':idFile/rename')
+  @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      file: FileResponse;
+    }>,
+    description: 'Renamed file',
+  })
+  async renameFile(@Param('idFile', ParseIntPipe) idFile: number, @Body() body: RenameFileDto): Promise<
+    ResponseMessageWithData<{
+      file: File;
+    }>
+  > {
+    const file = await this.fileService.renameFile(idFile, body);
+    if (file === null) {
+      throw new NotFoundException()
+    }
+    console.log("🚀 ~ file.controller.ts:572 ~ FileController ~ renameFile ~ file:", file)
+
+    return {
+      data: { file },
+      message: 'Renamed file',
+    };
+  }
+
   @Get(':idFile/access_shares')
   @ApiOkResponse({
     type: ResponseMessageWithData<{
-      shareReceivers: any;
+      shareReceivers: ShareGroupsUsersResponse;
     }>,
     description: 'Users or groups that have access right to the file',
   })
   async getReceiversShare(@Param('idFile', ParseIntPipe) id: number): Promise<
     ResponseMessageWithData<{
-      shareReceivers: ShareGroupsUsersResponse[];
+      shareReceivers: ShareGroupsUsersResponse;
     }>
   > {
     const shareReceivers = await this.fileService.getAccessUsersGroupsFile(id);
     return {
       data: { shareReceivers },
       message: 'Users or groups that have access right to the file',
+    };
+  }
+
+  @Get(':idFile')
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{
+      file: FileResponse
+    }>,
+    description: 'File details displayed successfully',
+  })
+  async getDetailsFile(@Param('idFile', ParseIntPipe) id: number): Promise<
+    ResponseMessageWithData<{
+      file: FileResponse
+    }>
+  > {
+    const file = await this.fileService.detailsFile(id);
+    console.log("🚀 ~ file.controller.ts:616 ~ FileController ~ getDetailsFile ~ file:", file)
+    return {
+      data: { file },
+      message: 'File details displayed successfully',
     };
   }
 }

@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.ms.notification.dto.CreateNotificationRequest;
@@ -46,9 +45,6 @@ public class NotificationService {
     @Autowired
     WebhookHandler webhookHandler;
 
-    @Autowired
-    SimpMessagingTemplate messagingTemplate;
-
     @CachePut(value = "notificationsCache", key = "#request")
     public NotificationDto createNotification(CreateNotificationRequest request) {
         TypeNotification type = TypeNotification.valueOf(request.getType());
@@ -73,7 +69,6 @@ public class NotificationService {
         if (channel == TypeChannel.WEBHOOK) {
             webhookHandler.send(notif);
         }
-        messagingTemplate.convertAndSend("/topic/" + notif.getRecipientId(), notif);
         log.debug("Notification created successfully "+notif);
         return mapToDTO(notification);
     }

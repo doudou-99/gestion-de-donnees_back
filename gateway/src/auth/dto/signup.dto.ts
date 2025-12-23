@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsString, IsNotEmpty, Length, IsStrongPassword, IsOptional, IsPostalCode } from "class-validator";
+import { IsEmail, IsString, IsNotEmpty, Length, IsStrongPassword, ValidateIf } from "class-validator";
 
 export class SignupDto {
     @ApiProperty({required: true, uniqueItems: true})
@@ -21,28 +21,10 @@ export class SignupDto {
       minSymbols: 1,         
       minUppercase: 1    
     })    
-    password: string;    
-    
-    @ApiProperty({required: true, minLength:5})
-    @IsString()     
-    @IsNotEmpty()     
-    @Length(5)     
-    address: string;      
-    
-    @ApiProperty({required: false, minLength: 5})
-    @IsString()     
-    @IsNotEmpty()     
-    @Length(5)     
-    @IsOptional()     
-    additionalAddress?: string;       
-    
-    @ApiProperty({required: true})
-    @IsNotEmpty()     
-    @IsString()    
-    zipCode: string;       
+    password: string;        
   
     @ApiProperty({required: false})
+    @ValidateIf((_, value) => value !== '' && value !== undefined)    
     @IsEmail()     
-    @IsOptional()     
     extraEmail?: string; 
 }

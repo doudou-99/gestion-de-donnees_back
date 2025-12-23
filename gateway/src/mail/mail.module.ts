@@ -16,7 +16,9 @@ import { MailerModule } from '@nestjs-modules/mailer';
           },
           tls: {
             ciphers:'SSLv3'
-          }
+          },
+          logger: false,
+
         },
         defaults: {
           from: process.env.MAIL_USERNAME

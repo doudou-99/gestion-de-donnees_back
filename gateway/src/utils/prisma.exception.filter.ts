@@ -16,6 +16,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
             path: request.url,
         }
         let message = "";
+        console.log(exception.stack)
         switch(exception.code) {
             case "P2002":
                 body.status = HttpStatus.PRECONDITION_FAILED
@@ -34,7 +35,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
                 message = "Bad Request"
                 break;
         }
-        console.error(exception.message, exception.cause);
+        console.log(exception.stack)
         response.status(status).json({
             ...body,
             message: message

@@ -1,5 +1,5 @@
 package com.ms.notification.entity.enums;
 
 public enum TypeChannel {
-    PUSH, EMAIL, WEBHOOK
+    PUSH, EMAIL, WEBHOOK, IN_APP
 }

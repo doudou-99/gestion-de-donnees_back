@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { PayloadInterface } from './interface/payload.interface';
 import { JwtOptionsInterface } from './interface/jwt.options.interface';
 import { EnumTokenType, Token } from '@prisma/client';
@@ -32,15 +32,21 @@ export class AuthService {
   }
 
   async generateToken(payload: PayloadInterface, options: JwtOptionsInterface): Promise<string> {
-    return await this.jwtService.signAsync(payload, options);
+    const optionsJWT: JwtSignOptions = {
+      ...options,
+      expiresIn: options.expiresIn as any
+    }
+    return await this.jwtService.signAsync(payload, optionsJWT);
   }
 
   async upsertToken(
     userId: number,
     token: string,
     type: EnumTokenType = 'REFRESHTOKEN',
+    ancienToken?: string,
     expiresAt?: Date,
   ): Promise<void> {
+    const tokenJSON = ancienToken ? {token:ancienToken, userId} :  {token, userId}
     await this.prisma.token.upsert({
       create: {
         token,
@@ -48,15 +54,24 @@ export class AuthService {
         type,
         expiresAt,
       },
-      where: { type_userId: { type, userId } },
+      where: { token_userId: tokenJSON, type },
       update: { token, expiresAt },
     });
   }
 
-  async findUniqueToken(userId: number, type: EnumTokenType = "REFRESHTOKEN"): Promise<Token> {
-    return this.prisma.token.findUniqueOrThrow({
-        where: {type_userId: {type, userId}}
+  async findUniqueToken(userId: number, tokenClear: string): Promise<Token> {
+    const tokens = await this.prisma.token.findMany({
+      where: {userId: userId}
     });
+    for (let t of tokens) {
+      console.log("🚀 ~ auth.service.ts:65 ~ AuthService ~ findUniqueToken ~ t:", t);
+      const compareToken = await this.compare(t.token, tokenClear);
+      if (compareToken) {
+        console.log("🚀 ~ auth.service.ts:67 ~ AuthService ~ findUniqueToken ~ this.compare(t.token, tokenClear):", this.compare(t.token, tokenClear));
+        return t;
+      }
+    }
+    return null;
   }
 
   async sendConfirmEmail(email: string, token: string) {

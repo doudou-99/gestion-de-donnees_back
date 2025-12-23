@@ -15,7 +15,7 @@ public class WebhookHandler {
     private RestTemplate restTemplate;
 
     public void send(Notification notification) {
-        restTemplate.postForEntity(url+"/api/v1/notifications", notification, Notification.class);
+        restTemplate.postForEntity(url+"/api/v1/notification", notification, Notification.class);
     }
 
 }
