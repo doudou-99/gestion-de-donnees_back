@@ -1,4 +1,4 @@
-import { Injectable, PreconditionFailedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, PreconditionFailedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SharesCreateDto } from './dto/shares.create.dto';
 import { AccessShareDto } from './dto/access.share.dto';
@@ -7,8 +7,12 @@ import { AccessShareDto } from './dto/access.share.dto';
 export class ShareService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createShares(fileId: number, data: SharesCreateDto) {
+  async createShares(fileId: number, userId: number, data: SharesCreateDto) {
     console.log(data.users === undefined);
+    const file = await this.prisma.file.findUniqueOrThrow({where: {id: fileId}});
+    if (file.userId !== userId) {
+      throw new ForbiddenException("User is not connected")
+    }
     if (
       (data.users === undefined ||
         (data.users !== undefined && data.users.length === 0)) &&
@@ -101,11 +105,16 @@ export class ShareService {
    * 
    * @returns the list of users and groups
    */
-  async getReceivers() {
+  async getReceivers(idUser: number) {
     const users = await this.prisma.user.findMany({
       select: {
         id: true,
         email: true
+      },
+      where: {
+        NOT: {
+          id: idUser
+        }
       }
     });
     const groups = await this.prisma.group.findMany({
