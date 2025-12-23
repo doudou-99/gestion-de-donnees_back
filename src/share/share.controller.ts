@@ -22,6 +22,7 @@ import type { RequestPayload } from '../auth/interface/payload.interface';
 import { ShareAccessUserResponse, ShareAccessGroupResponse } from './response/share.access.response';
 import { AccessShareDto } from './dto/access.share.dto';
 import { ReceiversResponse } from './response/share.receiver.response';
+import { Request } from 'express';
 
 @Controller('api/v1/shares')
 @UseGuards(AccessTokenGuard)
@@ -49,7 +50,7 @@ export class ShareController {
     if (data.users !== undefined && data.users.includes(req.user.sub)) {
         throw new BadRequestException();
     }
-    const shares = await this.shareService.createShares(id, data);
+    const shares = await this.shareService.createShares(id, req.user.sub, data);
     return {
       data: { shares },
       message: 'Shares of users or groups that have access right to the file',
@@ -116,12 +117,12 @@ export class ShareController {
   })
   @ApiBearerAuth()
   @Get('receivers')
-  async getReceivers(): Promise<
+  async getReceivers(@Req() req: RequestPayload): Promise<
     ResponseMessageWithData<{
       receivers: ReceiversResponse
     }>
   > {
-    const receivers = await this.shareService.getReceivers();
+    const receivers = await this.shareService.getReceivers(req.user.sub);
     console.log("🚀 ~ share.controller.ts:124 ~ ShareController ~ getReceivers ~ receivers:", receivers)
 
     return {
