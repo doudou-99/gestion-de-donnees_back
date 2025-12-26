@@ -483,6 +483,21 @@ export class FileController {
     };
   }
 
+  @Get('view/:idFile')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
+  @ApiOkResponse({
+    type: ResponseMessageWithData<{ url: string }>,
+    description: 'Url file',
+  })
+  async viewUrlFile(@Param('idFile', ParseIntPipe) idFile: number): Promise<ResponseMessageWithData<{url: string}>> {
+    const url = await this.fileService.getFileUrl(idFile);
+    return {
+      data: { url },
+      message: 'File url displayed successfully',
+    };
+  }
+
   @Get(':idFile/owner')
   @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
   @ApiOkResponse({
