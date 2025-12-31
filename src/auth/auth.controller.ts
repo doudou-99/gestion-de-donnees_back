@@ -7,7 +7,6 @@ import {
   Param,
   Post,
   PreconditionFailedException,
-  Query,
   Req,
   Res,
   UnauthorizedException,
