@@ -123,7 +123,7 @@ export class AuthController {
       body.password,
     );
     if (user.status === 'NOT_CONFIRMED') {
-      throw new PreconditionFailedException();
+      throw new PreconditionFailedException("Not verified");
     }
     if (!compare) {
       throw new PreconditionFailedException('Bad credentials');
