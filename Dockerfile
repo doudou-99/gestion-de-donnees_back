@@ -27,8 +27,8 @@ COPY package*.json ./
 
 COPY init_nest.sh ./
 
-RUN chmod +x init_nest.sh
+RUN sed -i 's/\r$//' init_nest.sh && chmod +x init_nest.sh
 
 EXPOSE 3000
 
-CMD ["./init_nest.sh"]
+CMD ["/app/init_nest.sh"]
