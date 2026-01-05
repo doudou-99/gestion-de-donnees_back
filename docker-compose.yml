@@ -1,0 +1,67 @@
+services: 
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_USER: ${MYSQL_USER:-nestjs_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-nestjs_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gestion_file}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-projet-data:/var/lib/mysql
+      - ./init-user.sql:/docker-entrypoint-initdb.d/init-user.sql    
+    networks:
+      - gestion_fichier-network-dev
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+  phpmyadmin:
+    image: phpmyadmin
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: always
+    ports:
+      - 8090:80
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: nestjs_user
+      PMA_PASSWORD: nestjs_password
+    networks:
+      - gestion_fichier-network-dev
+  backend:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env.docker
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - gestion_fichier-network-dev
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ../gestion-donnees_front
+      dockerfile: Dockerfile
+    container_name: react_app
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db-projet-data:
+    driver: local
+
+networks:
+  gestion_fichier-network-dev:
+    name: gestion_fichier-network-dev
+    driver: bridge
