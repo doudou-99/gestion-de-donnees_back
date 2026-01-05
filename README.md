@@ -5,17 +5,14 @@ This project is a web application where the users can import, delete, edit, see 
 
 ## Installation
 * Write in the terminal: `npm install` 
-* To run the server: `npm run dev`
+* To run the server: `npm run start:dev`
 * To view the app in the browser: `http://localhost:3000`
 
 ## Features
 * Authentication
 * View of a list of files for each user.
 * Import files.
-* Download file
 * Delete file with the help of the options for each file in the table
 * View file ('PDF, Powerpoint, Excel, Word, Image, Video, Audio') with a viewer.
 * View of the file's details.
 * Share of file with users or groups.
-
-
