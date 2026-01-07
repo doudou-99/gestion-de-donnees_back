@@ -3,37 +3,37 @@ stages:
   - deploy
 
 
-stage-1:  
-  image: docker:stable           
-  stage: build                
-  services:                      
+stage-1:
+  image: docker:stable
+  stage: build
+  services:
     - docker:dind
-  before_script:                 
+  before_script:
     - echo "Préparation..."
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:                        
+  script:
     - echo "Exécution..."
     - docker build -t $CI_REGISTRY_IMAGE:$TAG_TEST .
     - docker push $CI_REGISTRY_IMAGE:$TAG_TEST
-  rules:                         
+  rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - when: manual      
+    - when: manual
 
-stage-2:  
-  image: docker:stable           
-  stage: deploy                
-  services:                      
+stage-2:
+  image: docker:stable
+  stage: deploy
+  services:
     - docker:dind
-  before_script:                 
+  before_script:
     - echo "Préparation..."
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:                        
+  script:
     - echo "Exécution..."
     - docker build -t $CI_REGISTRY_IMAGE:$TAG_STAGING .
     - docker push $CI_REGISTRY_IMAGE:$TAG_STAGING
-  rules:                         
+  rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - when: manual                 
+    - when: manual
 
 build_back:  
   image: docker:stable           

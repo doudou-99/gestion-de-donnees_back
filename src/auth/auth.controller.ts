@@ -199,8 +199,8 @@ export class AuthController {
     await this.authService.upsertToken(user.id, hashedRefresh);
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -278,8 +278,8 @@ export class AuthController {
     );
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });

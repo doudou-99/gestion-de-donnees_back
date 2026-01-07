@@ -5,8 +5,8 @@ import { fakerFR as faker } from '@faker-js/faker';
 const prisma = new PrismaClient();
 
 const generatePassword = (): string => {
-  const lower = faker.string.alpha({ length: 2, casing: 'lower' });
-  const upper = faker.string.alpha({ length: 2, casing: 'upper' });
+  const lower = faker.string.alpha({ length: 1, casing: 'lower' });
+  const upper = faker.string.alpha({ length: 1, casing: 'upper' });
   const numbers = faker.string.numeric(2);
   const special = faker.helpers.arrayElement([
     '!',
