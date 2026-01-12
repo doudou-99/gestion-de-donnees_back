@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { File } from '@prisma/client';
 import { importDto } from './dto/import.dto';
 import { RenameFileDto } from './dto/rename.file.dto';
-import {S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand, DeleteObjectCommand} from '@aws-sdk/client-s3';
+import {S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, RenameObjectCommand, CopyObjectCommand} from '@aws-sdk/client-s3';
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
 
 export type Sort = 'name' | 'updatedAt';
@@ -387,7 +387,21 @@ export class FileService {
    * Rename file with a new name
    */
   async renameFile(id: number, data: RenameFileDto) {
-    console.log(data)
+    const file = await this.detailsFile(id);
+    const key = `${file.name}_user_${file.userId}`;
+    const keyDest = `${data.name}_user_${file.userId}`;
+
+    const commandCopy = new CopyObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: keyDest,
+      CopySource: `${process.env.AWS_BUCKET_NAME}/${key}`,
+    });
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+    });
+    await this.s3Client.send(commandCopy);
+    await this.s3Client.send(command);
     return await this.prisma.file.update({
       data: { name: data.name, path: "/"+data.name},
       where: {

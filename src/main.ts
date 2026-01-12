@@ -15,7 +15,17 @@ async function bootstrap() {
   }));
   app.use(cookieParser());
   app.use('/favicon.ico', (req: Request, res: Response) => res.status(204).end());
-  app.enableCors({ origin: true, credentials: true })
+  const list = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || [
+    'http://localhost:5173',
+    'https://gestion-app.duckdns.org',
+  ];
+  app.enableCors({ origin: (origin, callback) => {
+    if (!origin || list.indexOf(origin) !== -1) {
+      callback(null, true); 
+    } else {
+      callback(new Error('Not allowed by CORS')); 
+    }
+  }, credentials: true })
 
   const config = new DocumentBuilder()
     .setTitle('Data management')

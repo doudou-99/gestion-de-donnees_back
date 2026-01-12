@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { PayloadInterface } from './interface/payload.interface';
@@ -45,9 +45,9 @@ export class AuthService {
     type: EnumTokenType = 'REFRESHTOKEN',
     ancienToken?: string,
     expiresAt?: Date,
-  ): Promise<void> {
+  ): Promise<Token> {
     const tokenJSON = ancienToken ? {token:ancienToken, userId} :  {token, userId}
-    await this.prisma.token.upsert({
+    return await this.prisma.token.upsert({
       create: {
         token,
         userId,

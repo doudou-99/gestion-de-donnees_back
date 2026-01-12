@@ -1,61 +1,58 @@
-services: 
-  mysql:
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-      MYSQL_USER: ${MYSQL_USER:-nestjs_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-nestjs_password}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-gestion_file}
-    ports:
-      - "3306:3306"
-    volumes:
-      - db-projet-data:/var/lib/mysql
-      - ./init-user.sql:/docker-entrypoint-initdb.d/init-user.sql    
-    networks:
-      - gestion_fichier-network-dev
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 40s
+services:
   phpmyadmin:
     image: phpmyadmin
-    depends_on:
-      mysql:
-        condition: service_healthy
+    container_name: phpmyadmin
     restart: always
     ports:
       - 8090:80
     environment:
-      PMA_HOST: mysql
+      PMA_HOST: database-projet.c3agsaymkxi0.eu-west-3.rds.amazonaws.com
       PMA_USER: nestjs_user
-      PMA_PASSWORD: nestjs_password
+      PMA_PASSWORD: root_password
     networks:
       - gestion_fichier-network-dev
+      - nginx-network
   backend:
     build: .
-    ports:
-      - "3000:3000"
+    container_name: nestjs_api
+    expose:
+      - "3000"
     env_file:
-      - ./.env.docker
+      - ./.env.production
     depends_on:
-      mysql:
-        condition: service_healthy
+      - phpmyadmin
     networks:
       - gestion_fichier-network-dev
+      - nginx-network
     restart: unless-stopped
   frontend:
     build:
-      context: ../gestion-donnees_front
+      context: ../gestion-de-donnees_front
       dockerfile: Dockerfile
     container_name: react_app
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - backend
     restart: unless-stopped
+    networks:
+      - nginx-network
+      - gestion_fichier-network-dev
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: always
+    ports:
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+    environment:
+      DISABLE_IPV6: 'true'
+    networks:
+      - nginx-network
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
 
 volumes:
   db-projet-data:
@@ -65,3 +62,6 @@ networks:
   gestion_fichier-network-dev:
     name: gestion_fichier-network-dev
     driver: bridge
+  nginx-network:
+    name: nginx-network
+    external: true
