@@ -1,23 +1,22 @@
 stages:
-  - build
   - deploy
-
 
 stage-1:
   image: docker:stable
-  stage: build
+  stage: deploy
   services:
-    - docker:dind
+    - node:20
   before_script:
     - echo "Préparation..."
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - echo "Exécution..."
-    - docker build -t $CI_REGISTRY_IMAGE:$TAG_TEST .
+    - npm run test
+    - docker build -f Dockerfile.dev -t $CI_REGISTRY_IMAGE:$TAG_TEST .
     - docker push $CI_REGISTRY_IMAGE:$TAG_TEST
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - when: manual
+    - if: ($CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop") || $CI_COMMIT_BRANCH == "develop"
+      when: manual
 
 stage-2:
   image: docker:stable
@@ -29,11 +28,11 @@ stage-2:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - echo "Exécution..."
-    - docker build -t $CI_REGISTRY_IMAGE:$TAG_STAGING .
+    - docker build -f Dockerfile -t $CI_REGISTRY_IMAGE:$TAG_STAGING .
     - docker push $CI_REGISTRY_IMAGE:$TAG_STAGING
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "develop" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "staging"
+      when: manual
 
 build_back:  
   image: docker:stable           
@@ -45,10 +44,8 @@ build_back:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:                        
     - echo "Exécution..."
-    - docker build -t $CI_REGISTRY_IMAGE:$TAG_PROD .
+    - docker build -f Dockerfile -t $CI_REGISTRY_IMAGE:$TAG_PROD .
     - docker push $CI_REGISTRY_IMAGE:$TAG_PROD
-  after_script:                  
-    - echo "Nettoyage..."
   rules:                         
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - when: manual                     
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "staging" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      when: manual                     
