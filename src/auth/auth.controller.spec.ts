@@ -21,7 +21,8 @@ describe('Testing AuthController', () => {
         generateToken: jest.fn(),
         upsertToken: jest.fn(),
         findUniqueToken: jest.fn(),
-        sendConfirmEmail: jest.fn()
+        sendConfirmEmail: jest.fn(),
+        deleteToken: jest.fn()
     };
 
     const mockUserService = {
@@ -221,11 +222,13 @@ describe('Testing AuthController', () => {
             mockRequest.user = {sub: mockUserId}
             const hashedConfirm = await mockHashedConfirmToken
             mockPrismaConfirmToken.token = hashedConfirm;
-            jest.spyOn(mockAuthService, "findUniqueToken").mockReturnValue(mockPrismaConfirmToken);
-            jest.spyOn(mockAuthService, "compare").mockReturnValue(true);
-            jest.spyOn(mockUserService, "getById").mockReturnValue(user);
-            jest.spyOn(mockUserService, "updateUser").mockReturnValue(mockUserConfirmed);
-            jest.spyOn(response, "redirect").mockReturnValue(undefined);
+            jest.spyOn(mockAuthService, "findUniqueToken").mockResolvedValue(mockPrismaConfirmToken);
+            jest.spyOn(mockAuthService, "compare").mockResolvedValue(true);
+            jest.spyOn(mockUserService, "getById").mockResolvedValueOnce(user).mockResolvedValueOnce(mockUserConfirmed);
+            jest.spyOn(mockUserService, "updateUser").mockResolvedValue(mockUserConfirmed);
+            jest.spyOn(mockAuthService, "deleteToken").mockResolvedValue(undefined);
+
+            jest.spyOn(response, "redirect").mockImplementation(() => undefined);
             const result = await controller.confirm(mockRequest, mockConfirmToken, response);
            
             expect(result).toEqual(undefined);   
@@ -233,12 +236,16 @@ describe('Testing AuthController', () => {
             expect(mockAuthService.compare).toHaveBeenCalledWith(hashedConfirm, mockConfirmToken);  
             expect(mockUserService.getById).toHaveBeenCalledWith(mockRequest.user.sub);
             expect(mockUserService.updateUser).toHaveBeenCalledWith(mockRequest.user.sub, {status: "CONFIRMED"});
+
+            expect(mockUserService.getById).toHaveBeenCalledTimes(2);
+            expect(mockAuthService.deleteToken).toHaveBeenCalledWith(mockRequest.user.sub, mockPrismaConfirmToken.token);
+
             expect(response.redirect).toHaveBeenCalledWith(process.env.FRONT_URL+"/confirmation")
         });
-        it("should throw error if the token doesn't exist", async () => {
+        it("should redirect to signin page if the token doesn't exist", async () => {
             mockRequest.user = {sub: mockUserId}
             jest.spyOn(mockAuthService, "findUniqueToken").mockRejectedValue(new BadRequestException());
-            await expect(controller.confirm(mockRequest, mockConfirmToken,response)).rejects.toThrow();
+            await expect(controller.confirm(mockRequest, mockConfirmToken,response)).rejects.toThrow(new BadRequestException());
         })
 
         it("should throw error if the type of token is different", async () => {
@@ -246,9 +253,11 @@ describe('Testing AuthController', () => {
             const hashedRefresh = await mockHashedRefreshToken;
             mockPrismaRefreshToken.token = hashedRefresh;           
             jest.spyOn(mockAuthService, "findUniqueToken").mockReturnValue(mockPrismaRefreshToken);
-            await expect(controller.confirm(mockRequest, mockRefreshToken, response)).rejects.toThrow(new PreconditionFailedException("Incorrect token"));
+            const result = await controller.confirm(mockRequest, mockRefreshToken,response); 
+            expect(result).toEqual(undefined);              
             expect(mockAuthService.findUniqueToken).toHaveBeenCalledWith(mockUserId, mockRefreshToken);
-            expect(mockPrismaRefreshToken.type).not.toEqual("ACTIVATEACCOUNT")
+            expect(mockPrismaRefreshToken.type).not.toEqual("ACTIVATEACCOUNT");
+            expect(response.redirect).toHaveBeenCalledWith(process.env.FRONT_URL+"/signin")
         });
         it("should throw error if the user doesn't exist", async () => {
             mockRequest.user = {sub: 0}
@@ -258,7 +267,7 @@ describe('Testing AuthController', () => {
             jest.spyOn(mockAuthService, "compare").mockReturnValue(true);
             jest.spyOn(mockUserService, "getById").mockRejectedValue(new PreconditionFailedException());
            
-            await expect(controller.confirm(mockRequest, mockConfirmToken, response)).rejects.toThrow(new PreconditionFailedException());
+            await expect(controller.confirm(mockRequest, mockConfirmToken,response)).rejects.toThrow();
             expect(mockAuthService.findUniqueToken).toHaveBeenCalledWith(mockRequest.user.sub, mockConfirmToken);
             expect(mockAuthService.compare).toHaveBeenCalledWith(hashedConfirm, mockConfirmToken);  
         });
@@ -273,11 +282,14 @@ describe('Testing AuthController', () => {
             jest.spyOn(mockAuthService, "compare").mockReturnValue(true);
             jest.spyOn(mockUserService, "getById").mockReturnValue(user);
            
-            await expect(controller.confirm(mockRequest, mockConfirmToken, response)).rejects.toThrow(new PreconditionFailedException("Incorrect user status"));
+            const result = await controller.confirm(mockRequest, mockConfirmToken,response); 
+            expect(result).toEqual(undefined);             
             expect(mockAuthService.findUniqueToken).toHaveBeenCalledWith(mockRequest.user.sub, mockConfirmToken);
             expect(mockAuthService.compare).toHaveBeenCalledWith(hashedConfirm, mockConfirmToken);  
             expect(mockUserService.getById).toHaveBeenCalledWith(mockRequest.user.sub);
             expect(user.status).not.toEqual("NOT_CONFIRMED");
+            expect(response.redirect).toHaveBeenCalledWith(process.env.FRONT_URL+"/signin")
+
         });
     });
 

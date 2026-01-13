@@ -74,14 +74,22 @@ export class AuthService {
     return null;
   }
 
+  async deleteToken(userId: number, token: string): Promise<void> {
+    await this.prisma.token.delete({
+      where: {
+        token_userId: {userId, token}
+      }
+    })
+  }
+
   async sendConfirmEmail(email: string, token: string) {
     const url = `${process.env.BASE_URL}/api/v1/auth/confirm/${token}`;
     const message = `
     <p>
-      Welcome to the app Gestion de données, click in the link to confirm the account: <a href=${url}>here</a>
+      Welcome to the app Gestion de données, click in the link to confirm the account: <a data-cy="linkConfirm" href=${url}>here</a>
     </p>
     <strong>
-      The link is invalid after one minute.
+      The link is invalid after two minutes.
     </strong>
     `;
     this.mailService.sendEmail(email, process.env.MAIL_USERNAME, "Confirm mail", message);
