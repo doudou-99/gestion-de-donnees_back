@@ -10,6 +10,7 @@ export const prismaMock = {
   token: {
     findMany: jest.fn(),
     upsert: jest.fn(),
+    delete: jest.fn()
   },
 };
 
@@ -65,7 +66,7 @@ export const optionsRefreshToken: JwtOptionsInterface = {
 
 export const optionsConfirmToken: JwtOptionsInterface = {
   secret: process.env.SECRET_CONFIRM_KEY,
-  expiresIn: '60s',
+  expiresIn: '2m',
 }
 
 export const mockPrismaToken: Token = {

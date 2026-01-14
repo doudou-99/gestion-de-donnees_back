@@ -68,7 +68,7 @@ export class AuthController {
       { sub: user.id },
       {
         secret: process.env.SECRET_CONFIRM_KEY,
-        expiresIn: '60s',
+        expiresIn: '2m',
       },
     );
     const hashed = await this.authService.hash(confirm_token);
@@ -92,7 +92,7 @@ export class AuthController {
       { sub: user.id },
       {
         secret: process.env.SECRET_CONFIRM_KEY,
-        expiresIn: '60s',
+        expiresIn: '2m',
       },
     );
     const hashed = await this.authService.hash(confirm_token);
@@ -114,13 +114,17 @@ export class AuthController {
   ) {
     const tokenDB = await this.authService.findUniqueToken(req.user.sub, token);
     if (tokenDB.type !== 'ACTIVATEACCOUNT') {
-      throw new PreconditionFailedException('Incorrect token');
+      return res.redirect(process.env.FRONT_URL + '/signin');
     }
     const compare = await this.authService.compare(tokenDB.token, token);
     console.log(
       '🚀 ~ auth.controller.ts:92 ~ AuthController ~ confirm ~ compare:',
       compare,
     );
+
+    if (!compare) {
+      return res.redirect(process.env.FRONT_URL + '/signin');
+    }
 
     let user = await this.userService.getById(req.user.sub);
     console.log(
@@ -129,17 +133,25 @@ export class AuthController {
     );
 
     if (user.status !== 'NOT_CONFIRMED') {
-      throw new PreconditionFailedException('Incorrect user status');
+      return res.redirect(process.env.FRONT_URL + '/signin');
     }
-    user = await this.userService.updateUser(req.user.sub, {
+    await this.userService.updateUser(req.user.sub, {
       status: 'CONFIRMED',
     });
+
+    const updatedUser = await this.userService.getById(req.user.sub)
+  
+    if (updatedUser.status !== 'CONFIRMED') {
+      return res.redirect(process.env.FRONT_URL + '/signin');
+    }
+
     console.log(
       '🚀 ~ auth.controller.ts:104 ~ AuthController ~ confirm ~ user:',
-      user,
+      updatedUser,
     );
+    await this.authService.deleteToken(tokenDB.userId, tokenDB.token);
 
-    res.redirect(process.env.FRONT_URL + '/confirmation');
+    return res.redirect(process.env.FRONT_URL + '/confirmation');
   }
 
   @HttpCode(HttpStatus.OK)
@@ -162,16 +174,18 @@ export class AuthController {
     }>
   > {
     const user = await this.userService.getByEmail(body.email);
+    console.log("🚀 ~ auth.controller.ts:173 ~ AuthController ~ signIn ~ user:", user)
     const compare = await this.authService.compare(
       user.password,
       body.password,
     );
-    if (user.status === 'NOT_CONFIRMED') {
-      throw new PreconditionFailedException('Not verified');
-    }
     if (!compare) {
       throw new PreconditionFailedException('Bad credentials');
     }
+    if (user.status === 'NOT_CONFIRMED') {
+      throw new PreconditionFailedException('Not verified');
+    }
+    
     console.log(user, compare);
     const login: loginInterface = {
       id: user.id,

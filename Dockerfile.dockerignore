@@ -11,5 +11,6 @@ README.md
 dist
 
 *.spec.ts
+src/utils/tests/
 
 build

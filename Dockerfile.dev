@@ -13,8 +13,6 @@ RUN npx prisma generate
 
 COPY . .
 
-RUN chmod +x init_nest.sh
-
 EXPOSE 3000
 
 CMD ["npm", "run", "start:dev"]

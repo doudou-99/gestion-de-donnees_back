@@ -19,6 +19,7 @@ import {
   mockEmail,
 } from '../utils/tests/mockAuth';
 import { MailService } from '../mail/mail.service';
+import { BadRequestException } from '@nestjs/common';
 
 describe('Testing AuthService', () => {
   let authService: AuthService;
@@ -192,6 +193,26 @@ describe('Testing AuthService', () => {
       expect(prismaMock.token.findMany).toHaveBeenCalledWith({
         where: {
           userId: mockPrismaToken.userId,
+        },
+      });
+    });
+  });
+
+  describe('when the deleteToken function is called', () => {
+    it('should delete the token', async () => {
+      const hashedToken = await mockHashedToken;
+      mockPrismaToken.token = hashedToken;
+      prismaMock.token.delete.mockResolvedValue(undefined);
+      const result = await authService.deleteToken(mockUserId, hashedToken);
+      expect(result).toEqual(undefined);
+    });
+    it("should return null if the token doesn't exist", async () => {
+      prismaMock.token.delete.mockResolvedValue(null);
+      const result = await authService.deleteToken(0, mockPrismaToken.token);
+      expect(result).toEqual(undefined);
+      expect(prismaMock.token.delete).toHaveBeenCalledWith({
+        where: {
+          token_userId: {userId: 0, token: mockPrismaToken.token}
         },
       });
     });
