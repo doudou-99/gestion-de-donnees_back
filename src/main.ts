@@ -17,6 +17,8 @@ async function bootstrap() {
   app.use('/favicon.ico', (req: Request, res: Response) => res.status(204).end());
   const list = process.env.ORIGINS?.split(',').map(o => o.trim()) || [
     'http://localhost:5173',
+    'http:localhost', 
+    'http://localhost:85',
     'https://gestion-app.duckdns.org',
   ];
   app.enableCors({ origin: (origin, callback) => {
