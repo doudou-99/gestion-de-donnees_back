@@ -1,13 +1,28 @@
 stages:
+  - test
   - deploy
 
-stage-1:
+stage-test:
   image: node:20
+  stage: test
+  services:
+    mysql:8.0
+  script:
+    - echo "Exécution..."
+    - npm ci
+    - npm run test
+  rules:
+    - if: ($CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop") || $CI_COMMIT_BRANCH == "develop"
+      when: manual
+
+stage-1:
+  image: docker:stable
   stage: deploy
   services:
     - docker:dind
   before_script:
     - echo "Préparation..."
+    - apt-get update && apt-get install -y docker.io
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - echo "Exécution..."
