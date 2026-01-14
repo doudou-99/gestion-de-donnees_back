@@ -5,13 +5,14 @@ stage-1:
   image: docker:stable
   stage: deploy
   services:
+    - docker:dind
     - node:20
   before_script:
     - echo "Préparation..."
-    - npm install
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - echo "Exécution..."
+    - npm ci
     - npm run test
     - docker build -f Dockerfile.dev -t $CI_REGISTRY_IMAGE:$TAG_TEST .
     - docker push $CI_REGISTRY_IMAGE:$TAG_TEST
