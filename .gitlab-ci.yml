@@ -2,11 +2,10 @@ stages:
   - deploy
 
 stage-1:
-  image: docker:stable
+  image: node:20
   stage: deploy
   services:
     - docker:dind
-    - node:20
   before_script:
     - echo "Préparation..."
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
