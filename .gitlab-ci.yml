@@ -6,7 +6,7 @@ stage-test:
   image: node:20
   stage: test
   services:
-    mysql:8.0
+    - mysql:8.0
   script:
     - echo "Exécution..."
     - npm ci
