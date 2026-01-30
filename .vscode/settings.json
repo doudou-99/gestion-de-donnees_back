@@ -1,5 +1,7 @@
 {
+    "prisma.pinToPrisma6": true,
+    "typescript.tsdk": "node_modules\\typescript\\lib",
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "prisma.pinToPrisma6": true
+    "java.configuration.updateBuildConfiguration": "interactive"
+    
 }

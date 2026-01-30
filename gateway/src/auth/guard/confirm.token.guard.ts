@@ -32,7 +32,7 @@ export class ConfirmTokenGuard implements CanActivate {
     }
   
     private extractTokenFromURL(request: Request): string | undefined {
-      const token = request.params["token"];
+      const token = request.params["token"] ?? "";
       console.log("🚀 ~ confirm.token.guard.ts:37 ~ ConfirmTokenGuard ~ extractTokenFromURL ~ token:", token)
       return token;
     }

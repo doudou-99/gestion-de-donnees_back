@@ -4,15 +4,54 @@ import { fakerFR as faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
+const generatePassword = (): string => {
+  const lower = faker.string.alpha({ length: 1, casing: 'lower' });
+  const upper = faker.string.alpha({ length: 1, casing: 'upper' });
+  const numbers = faker.string.numeric(2);
+  const special = faker.helpers.arrayElement([
+    '!',
+    '@',
+    '#',
+    '$',
+    '%',
+    '^',
+    '&',
+    '*',
+    '?',
+    '(',
+    ')',
+    '|',
+    '-',
+    '_',
+    '~',
+    '[',
+    ']',
+    '{',
+    '}',
+    '<',
+    '>',
+    "'",
+    '"',
+    '+',
+    '.',
+    ';',
+  ]);
+
+  return faker.helpers
+    .shuffle(
+      (lower + upper + numbers + special + faker.string.alphanumeric(3)).split(
+        '',
+      ),
+    )
+    .join('');
+};
+
 const upsertData = async () => {
-  const pass = faker.internet.password({
-    pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=(?:.*[0-9]){2})(?=.*[-!$%^&*()_+|~=`{}\[\]:";'<>?,.\/]).+$/,
-  });
-  const user = await prisma.user.upsert({
-    where: { email: faker.internet.email() },
-    update: {},
-    create: {
-      email: faker.internet.email({ allowSpecialCharacters: true }),
+  const pass = generatePassword();
+  const emailUser = faker.internet.email({ allowSpecialCharacters: true });
+  const user = await prisma.user.create({
+    data: {
+      email: emailUser,
       password: await argon2.hash(pass),
       username: faker.internet.username(),
       status: 'CONFIRMED',
@@ -20,13 +59,12 @@ const upsertData = async () => {
     },
   });
   console.log(user, pass);
+  const groupName = faker.string.alphanumeric(5);
 
-  const group = await prisma.group.upsert({
-    where: { id: faker.number.int() },
-    update: {},
-    create: {
-      name: faker.string.alphanumeric(5),
-      leaderId: user.id
+  const group = await prisma.group.create({
+    data: {
+      name: groupName,
+      leaderId: user.id,
     },
   });
   console.log(group);

@@ -21,14 +21,14 @@ COPY --from=builder /app/dist ./dist
 
 COPY --from=builder /app/node_modules ./node_modules
 
-COPY --from=builder /app/prisma/schema.prisma ./prisma/
+COPY --from=builder /app/prisma ./prisma/
 
 COPY package*.json ./
 
 COPY init_nest.sh ./
 
-RUN chmod +x init_nest.sh
+RUN sed -i 's/\r$//' init_nest.sh && chmod +x init_nest.sh
 
 EXPOSE 3000
 
-CMD ["./init_nest.sh"]
+CMD ["/app/init_nest.sh"]

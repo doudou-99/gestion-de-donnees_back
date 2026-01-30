@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { PayloadInterface } from './interface/payload.interface';
@@ -45,9 +45,9 @@ export class AuthService {
     type: EnumTokenType = 'REFRESHTOKEN',
     ancienToken?: string,
     expiresAt?: Date,
-  ): Promise<void> {
+  ): Promise<Token> {
     const tokenJSON = ancienToken ? {token:ancienToken, userId} :  {token, userId}
-    await this.prisma.token.upsert({
+    return await this.prisma.token.upsert({
       create: {
         token,
         userId,
@@ -74,14 +74,22 @@ export class AuthService {
     return null;
   }
 
+  async deleteToken(userId: number, token: string): Promise<void> {
+    await this.prisma.token.delete({
+      where: {
+        token_userId: {userId, token}
+      }
+    })
+  }
+
   async sendConfirmEmail(email: string, token: string) {
     const url = `${process.env.BASE_URL}/api/v1/auth/confirm/${token}`;
     const message = `
     <p>
-      Welcome to the app Gestion de données, click in the link to confirm the account: <a href=${url}>here</a>
+      Welcome to the app Gestion de données, click in the link to confirm the account: <a data-cy="linkConfirm" href=${url}>here</a>
     </p>
     <strong>
-      The link is invalid after one minute.
+      The link is invalid after two minutes.
     </strong>
     `;
     this.mailService.sendEmail(email, process.env.MAIL_USERNAME, "Confirm mail", message);

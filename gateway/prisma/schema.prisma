@@ -74,7 +74,7 @@ model Group {
   id                      Int                   @id @default(autoincrement()) 
   leaderId                Int
   leader                  User                  @relation(fields: [leaderId], references: [id])
-  name                    String                @db.VarChar(50)
+  name                    String                @db.VarChar(50) @unique()
   memberGroups            MemberGroup[]
   fileRequests            FileRequest[]
   messages                Message[]
