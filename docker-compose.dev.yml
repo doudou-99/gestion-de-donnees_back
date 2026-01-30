@@ -126,7 +126,7 @@ services:
       dockerfile: /Dockerfile.dev
     container_name: gateway-api
     env_file:
-      - ./gateway/.env
+      - ./gateway/.env.development
     ports:
       - "3000:3000"
       - "9229:9229" 
@@ -134,7 +134,6 @@ services:
       - ./gateway/src:/app/src
       - ./gateway/prisma:/app/prisma
       - ./gateway/init-db.sh:/app/init-db.sh 
-      - /app/node_modules
     depends_on:
       mysql:
         condition: service_healthy

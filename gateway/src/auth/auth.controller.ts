@@ -107,7 +107,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @UseGuards(ConfirmTokenGuard)
-  @ApiOkResponse()
+  @ApiOkResponse({description: "Account confirmation"})
   @Get('confirm/:token')
   async confirm(
     @Req() req: RequestPayload,
