@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.ms.notification.dto.CreateNotificationRequest;
@@ -45,7 +46,13 @@ public class NotificationService {
     @Autowired
     WebhookHandler webhookHandler;
 
-    @CachePut(value = "notificationsCache", key = "#request")
+    @Caching(
+        put = @CachePut(value = "notificationsCache", key = "#result.id"),
+        evict = {
+            @CacheEvict(value = "notificationsUserCache", allEntries = true),
+            @CacheEvict(value = "notificationsNotReadCache", allEntries = true)
+        }
+    )    
     public NotificationDto createNotification(CreateNotificationRequest request) {
         TypeNotification type = TypeNotification.valueOf(request.getType());
         TypeChannel channel = TypeChannel.valueOf(request.getTypeChannel());
@@ -141,7 +148,7 @@ public class NotificationService {
     }
     
     public void deleteAllExpiredNotif() {
-        this.repository.deleteAllByExpiresAtGreaterThanEqual(LocalDateTime.now());
+        this.repository.deleteAllByExpiresAtLessThan(LocalDateTime.now());
     }
 
     public NotificationDto mapToDTO(Notification notification) {

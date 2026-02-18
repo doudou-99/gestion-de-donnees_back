@@ -8,10 +8,6 @@ import { JwtService } from '@nestjs/jwt';
 import { Request, Response } from 'express';
 import { RequestPayload } from '../interface/payload.interface';
 import { NotificationService } from '../../notification/notification.service';
-import { CreateNotificationRequest } from '../../notification/dto/create.notification.request';
-import { TypeRecipient } from '../../notification/enums/EnumTypeRecipient';
-import { TypeNotification } from '../../notification/enums/EnumTypeNotification';
-import { TypeChannel } from '../../notification/enums/EnumTypeChannel';
 import { UserService } from '../../user/user.service';
 
 @Injectable()
@@ -37,20 +33,6 @@ export class AccessTokenGuard implements CanActivate {
       request.user = payload;
       response.cookie("payload", request.user, {httpOnly: true})
     } catch {
-      const sub = request.cookies["payload"].sub;
-      const user = await this.userService.getById(sub);
-      const dto: CreateNotificationRequest = {
-        message: 'Expired token',
-        metadata: {
-          recipient: user.email,
-        },
-        recipientId: sub,
-
-        recipientType: TypeRecipient.USER,
-        type: TypeNotification.EXPIRED_TOKEN,
-        typeChannel: TypeChannel.EMAIL,
-      };
-      this.notificationService.create(dto).subscribe();
       throw new UnauthorizedException();
     }
     return true;

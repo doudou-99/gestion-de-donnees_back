@@ -1,12 +1,11 @@
 export interface NotificationResponse {
     recipientId: number;
     
-
     recipientType: string;
 
-    templateId: number
-    type: string;
+    templateId: number;
 
+    type: string;
 
     message: string;
 

@@ -26,10 +26,10 @@ public class EmailHandler {
     @Value("${api.base-url}")
     private String url;
 
-    @Value("${spring.mail.username}")
+    @Value("${email}")
     private String sender;
     
-    public void sendEmail(String recipient, String subject, String body) {
+    public void sendEmail(String recipient, String subject, String div) {
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");        
@@ -37,7 +37,7 @@ public class EmailHandler {
         try {
             helper.setFrom(sender);
             message.setSubject(subject);
-            helper.setText(body, true);
+            helper.setText(div, true);
             helper.setTo(recipient);
             log.info("msg:"+message);
             mailSender.send(message);
@@ -55,40 +55,42 @@ public class EmailHandler {
 
         if (type == TypeNotification.SHAREFILE && typeChannel == TypeChannel.EMAIL && content.containsKey("fileName")
                 && content.containsKey("fileId") && content.containsKey("recipient")) {
-            String msg = "<html><body>" + message + " of file " + content.get("fileName").toString() + " from user "
-                    + content.get("recipient").toString() +
-                    "<p> <img src='"+url+"/notification/read/" + id
-                    + "' width='1px' height='1px' alt=''/></p></body></html>";
+            String msg = "<html>" + message + " <img src='"+url+"/notification/read/" + id
+                    + "' width='1px' height='1px' alt=''/></p></html>";
             this.sendEmail(content.get("recipient").toString(), "Share file", msg);
             log.info("Share mail sent");
         }
         if (type == TypeNotification.EXPIRED_TOKEN && typeChannel == TypeChannel.EMAIL
                 && content.containsKey("recipient")) {
-            String msg = "<html><body>" + message
+            String msg = "<html><div>" + message
                     + " of user "+ content.get("recipient").toString() + "<p>To confirm that you have read the notification, click <a href='"+url+"/notification/read/"
                     + id + "'>here</a></p>"
-                    + "</body></html>";
+                    + "</div></html>";
             this.sendEmail(content.get("recipient").toString(), "Expired token", msg);
             log.info("Expired token email sent");
         }
         if (type == TypeNotification.ACCESSFILE && typeChannel == TypeChannel.EMAIL && content.containsKey("fileName")
                 && content.containsKey("fileId") && content.containsKey("recipient")) {
-            String msg = "<html><body>" + message + " of file " + content.get("fileName").toString() + " from user "
+            String msg = "<html><div>" + message + " of file " + content.get("fileName").toString() + " from user "
                     + content.get("recipient").toString() +
                     "<p><a href='"+url+"/share/access/" + content.get("fileId")
                     + "'>Click here to  <img src='"+url+"/notification/read/" + id
-                    + "' width='1px' height='1px' alt=''/></a></p></body></html>";
+                    + "' width='1px' height='1px' alt=''/></a></p></div></html>";
             this.sendEmail(content.get("recipient").toString(), "Access file", msg);
             log.info("Access file email sent");
         }
         if (type == TypeNotification.JOINGROUP && typeChannel == TypeChannel.EMAIL && content.containsKey("groupName")
                 && content.containsKey("groupId") && content.containsKey("recipient")) {
-            String msg = "<html><body>" + message + " of  group " + content.get("groupName").toString() + " by user "
+            String msg = "<html><div>" + message + " of  group " + content.get("groupName").toString() + " by user "
                     + content.get("recipient").toString() +
                     "<p>To confirm that you have read the notification, click <a href='"+url+"/notification/read/"
                     + id + "'>here</a></p>";
             this.sendEmail(content.get("recipient").toString(), "Request to join group", msg);
             log.info("Join email sent");
+        } 
+        if (type == TypeNotification.CONFIRM_ACCOUNT && typeChannel == TypeChannel.EMAIL && content.containsKey("recipient")) {
+            this.sendEmail(content.get("recipient").toString(), "Confirm account", message);
+            log.info("Confirm email sent");
         }
     }
 }

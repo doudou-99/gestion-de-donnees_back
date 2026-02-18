@@ -2,10 +2,14 @@ import { ForbiddenException, Injectable, PreconditionFailedException } from '@ne
 import { PrismaService } from '../../prisma/prisma.service';
 import { SharesCreateDto } from './dto/shares.create.dto';
 import { AccessShareDto } from './dto/access.share.dto';
+import { NotificationService } from '../notification/notification.service';
+import { TypeChannel } from '../notification/enums/EnumTypeChannel';
+import { TypeNotification } from '../notification/enums/EnumTypeNotification';
+import { TypeRecipient } from '../notification/enums/EnumTypeRecipient';
 
 @Injectable()
 export class ShareService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly notificationService: NotificationService) {}
 
   async createShares(fileId: number, userId: number, data: SharesCreateDto) {
     console.log(data.users === undefined);
@@ -37,6 +41,9 @@ export class ShareService {
               expirationDate: data.expirationDate
             },
           });
+          const file = await this.prisma.file.findUniqueOrThrow({where: {id: fileId}});
+          const msg = "<div>Share of file " + file.name + " from user "+ user.email + "</div>";
+          this.notificationService.create({message: msg, recipientType: TypeRecipient.USER, type: TypeNotification.SHAREFILE, typeChannel: TypeChannel.EMAIL, metadata: {recipient: user.email, fileId: fileId, fileName: file.name, urlShare: ""}, recipientId: user.id}).subscribe();
         }
       }
       if (data.groups && data.groups.length !== 0) {
@@ -53,9 +60,18 @@ export class ShareService {
                 expirationDate: data.expirationDate
             },
           });
+          const members = await group.memberGroups();
+          if (members.length === 0) throw new PreconditionFailedException("Members empty");
+          for (let member of members) {
+            const user = await this.prisma.user.findUnique({where: {id: member.userId}});
+            if (user === null) throw new PreconditionFailedException("User not found");
+            const file = await this.prisma.file.findUniqueOrThrow({where: {id: fileId}});
+            const msg = "<div>Share of file " + file.name + " from user "+ user.email + "</div>";
+            this.notificationService.create({message: msg, recipientType: TypeRecipient.GROUP, type: TypeNotification.SHAREFILE, typeChannel: TypeChannel.EMAIL, metadata: {recipient: user.email, fileId: fileId, fileName: file.name}, recipientId: user.id}).subscribe();
+          }
         }
       }
-      return this.prisma.file.findMany({
+      const sharesReceivers = this.prisma.file.findMany({
         select: {
           sharesGroups: true,
           sharesUsers: true
@@ -64,6 +80,7 @@ export class ShareService {
           id: fileId
         },
       });
+      return sharesReceivers;
     }
   }
 

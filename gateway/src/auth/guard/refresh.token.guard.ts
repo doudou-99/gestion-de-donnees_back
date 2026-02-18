@@ -7,17 +7,16 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { RequestPayloadWithRefresh } from '../interface/payload.interface';
-
 @Injectable()
 export class RefreshTokenGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: RequestPayloadWithRefresh = context
       .switchToHttp()
       .getRequest();
     
-       console.log('All cookies:', request.cookies);
+    console.log('All cookies:', request.cookies);
     console.log('Signed cookies:', request.signedCookies);
     
     const token = this.extractTokenFromCookie(request);

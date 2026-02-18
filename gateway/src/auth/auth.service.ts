@@ -6,13 +6,17 @@ import { JwtOptionsInterface } from './interface/jwt.options.interface';
 import { EnumTokenType, Token } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { NotificationService } from '../notification/notification.service';
+import { TypeRecipient } from '../notification/enums/EnumTypeRecipient';
+import { TypeNotification } from '../notification/enums/EnumTypeNotification';
+import { TypeChannel } from '../notification/enums/EnumTypeChannel';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    private readonly mailService: MailService
+    private readonly notificationService: NotificationService
   ) {}
 
   async hash(elementToHash: string): Promise<string> {
@@ -82,7 +86,7 @@ export class AuthService {
     })
   }
 
-  async sendConfirmEmail(email: string, token: string) {
+  async sendConfirmEmail(email: string, token: string, idRecipient: number) {
     const url = `${process.env.BASE_URL}/api/v1/auth/confirm/${token}`;
     const message = `
     <p>
@@ -92,6 +96,6 @@ export class AuthService {
       The link is invalid after two minutes.
     </strong>
     `;
-    this.mailService.sendEmail(email, process.env.MAIL_USERNAME, "Confirm mail", message);
+    this.notificationService.create({message, recipientType: TypeRecipient.USER, type: TypeNotification.CONFIRM_ACCOUNT, typeChannel: TypeChannel.EMAIL, metadata: {recipient: email}, recipientId: idRecipient}).subscribe();
   }
 }

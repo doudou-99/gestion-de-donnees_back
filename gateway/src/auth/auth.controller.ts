@@ -75,7 +75,7 @@ export class AuthController {
     );
     const hashed = await this.authService.hash(confirm_token);
     await this.authService.upsertToken(user.id, hashed, 'ACTIVATEACCOUNT');
-    await this.authService.sendConfirmEmail(body.email, confirm_token);
+    await this.authService.sendConfirmEmail(body.email, confirm_token, user.id);
     return {
       data: { user },
       message: 'The user is created',
@@ -99,7 +99,7 @@ export class AuthController {
     );
     const hashed = await this.authService.hash(confirm_token);
     await this.authService.upsertToken(user.id, hashed, 'ACTIVATEACCOUNT');
-    await this.authService.sendConfirmEmail(user.email, confirm_token);
+    await this.authService.sendConfirmEmail(user.email, confirm_token, user.id);
     return {
       message: 'Confirmation email sent',
     };
@@ -216,7 +216,7 @@ export class AuthController {
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -295,10 +295,18 @@ export class AuthController {
     res.cookie('refreshToken', refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    res.cookie("sessionId", "sessionEvent1", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created',
