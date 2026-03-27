@@ -24,10 +24,7 @@ export class GroupController {
     }>
   > {
     const group = await this.groupService.getById(idGroup);
-    console.log(
-      '🚀 ~ group.controller.ts:23 ~ GroupController ~ getById ~ group:',
-      group,
-    );
+    console.log('🚀 ~ group.controller.ts:23 ~ GroupController ~ getById ~ group:', group);
 
     return {
       data: { group },

@@ -11,10 +11,19 @@ import { ShareModule } from './share/share.module';
 import { GroupModule } from './group/group.module';
 
 @Module({
-  imports: [UserModule, PrismaModule, AuthModule, MailModule, ConfigModule.forRoot({
-    isGlobal: true,
-    validate
-  }), FileModule, ShareModule, GroupModule],
+  imports: [
+    UserModule,
+    PrismaModule,
+    AuthModule,
+    MailModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate,
+    }),
+    FileModule,
+    ShareModule,
+    GroupModule,
+  ],
   providers: [AppService],
 })
 export class AppModule {}

@@ -9,25 +9,30 @@ import { Request, Response } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter())
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true
-  }));
+  app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+    }),
+  );
   app.use(cookieParser());
   app.use('/favicon.ico', (req: Request, res: Response) => res.status(204).end());
-  const list = process.env.ORIGINS?.split(',').map(o => o.trim()) || [
+  const list = process.env.ORIGINS?.split(',').map((o) => o.trim()) || [
     'http://localhost:5173',
-    'http:localhost', 
+    'http:localhost',
     'http://localhost:85',
     'https://gestion-app.duckdns.org',
   ];
-  app.enableCors({ origin: (origin, callback) => {
-    if (!origin || list.indexOf(origin) !== -1) {
-      callback(null, true); 
-    } else {
-      callback(new Error('Not allowed by CORS')); 
-    }
-  }, credentials: true })
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin || list.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Data management')
@@ -38,7 +43,7 @@ async function bootstrap() {
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, documentFactory, {
-    jsonDocumentUrl: 'swagger/json'
+    jsonDocumentUrl: 'swagger/json',
   });
   await app.listen(process.env.PORT ?? 3000);
 }

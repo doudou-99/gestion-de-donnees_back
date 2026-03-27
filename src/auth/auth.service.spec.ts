@@ -60,17 +60,11 @@ describe('Testing AuthService', () => {
 
   describe('when the compare function is called', () => {
     it('should return true if the string and the hashed string are equals', async () => {
-      const result = await authService.compare(
-        await mockHashedPassword,
-        mockPassword,
-      );
+      const result = await authService.compare(await mockHashedPassword, mockPassword);
       expect(result).toBeTruthy();
     });
     it('should return false if the hashed string and the sentence are different', async () => {
-      const result = await authService.compare(
-        await mockHashedPassword,
-        'motdepasse',
-      );
+      const result = await authService.compare(await mockHashedPassword, 'motdepasse');
       expect(result).toBeFalsy();
     });
   });
@@ -78,10 +72,7 @@ describe('Testing AuthService', () => {
   describe('when the generateToken function is called', () => {
     it('should return the generated token', async () => {
       jwtMock.signAsync.mockResolvedValue(mockToken);
-      const result = await authService.generateToken(
-        { sub: mockUserId },
-        optionsToken,
-      );
+      const result = await authService.generateToken({ sub: mockUserId }, optionsToken);
       expect(result).toEqual(mockToken);
       expect(jwtMock.signAsync).toHaveBeenCalledTimes(1);
     });
@@ -90,10 +81,7 @@ describe('Testing AuthService', () => {
   describe('when the generateToken function is called', () => {
     it('should return the generated token', async () => {
       jwtMock.signAsync.mockResolvedValue(mockToken);
-      const result = await authService.generateToken(
-        { sub: mockUserId },
-        optionsToken,
-      );
+      const result = await authService.generateToken({ sub: mockUserId }, optionsToken);
       expect(result).toEqual(mockToken);
       expect(jwtMock.signAsync).toHaveBeenCalledTimes(1);
     });
@@ -103,10 +91,7 @@ describe('Testing AuthService', () => {
     it('should return the created token ', async () => {
       mockPrismaToken.token = await mockHashedToken;
       prismaMock.token.upsert.mockResolvedValue(mockPrismaToken);
-      const result = await authService.upsertToken(
-        mockUserId,
-        mockPrismaToken.token,
-      );
+      const result = await authService.upsertToken(mockUserId, mockPrismaToken.token);
       expect(result).toEqual(mockPrismaToken);
       expect(prismaMock.token.upsert).toHaveBeenCalledTimes(1);
       expect(prismaMock.token.upsert).toHaveBeenCalledWith({
@@ -134,12 +119,7 @@ describe('Testing AuthService', () => {
 
       mockPrismaNewToken.token = await mockHashedNewToken;
       prismaMock.token.upsert.mockResolvedValue(mockPrismaNewToken);
-      const result = await authService.upsertToken(
-        res.userId,
-        mockPrismaNewToken.token,
-        'REFRESHTOKEN',
-        res.token,
-      );
+      const result = await authService.upsertToken(res.userId, mockPrismaNewToken.token, 'REFRESHTOKEN', res.token);
       expect(result).toEqual(mockPrismaNewToken);
       expect(prismaMock.token.upsert).toHaveBeenCalledTimes(2);
       expect(prismaMock.token.upsert).toHaveBeenCalledWith({
@@ -212,7 +192,7 @@ describe('Testing AuthService', () => {
       expect(result).toEqual(undefined);
       expect(prismaMock.token.delete).toHaveBeenCalledWith({
         where: {
-          token_userId: {userId: 0, token: mockPrismaToken.token}
+          token_userId: { userId: 0, token: mockPrismaToken.token },
         },
       });
     });
@@ -221,7 +201,7 @@ describe('Testing AuthService', () => {
   describe('when the sendConfirmEmail function is called', () => {
     it('should send an email', async () => {
       mailMock.sendEmail.mockReturnValue(undefined);
-      await authService.sendConfirmEmail(mockEmail, await mockHashedConfirmToken)
+      await authService.sendConfirmEmail(mockEmail, await mockHashedConfirmToken);
       expect(mailMock.sendEmail).toHaveBeenCalledTimes(1);
     });
   });

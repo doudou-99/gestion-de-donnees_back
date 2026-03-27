@@ -23,18 +23,15 @@ import type { RequestPayload } from '../auth/interface/payload.interface';
 import { FileService, Order, Sort } from './file.service';
 import { ResponseMessageWithData } from '../responses/response.message.with.data';
 import { File, User } from '@prisma/client';
-import {
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FileResponse } from './responses/file.response';
 import { ResponseMessage } from '../responses/response.message';
 import { ShareGroupsUsersResponse } from './responses/shares.groups.users';
 import { RenameFileDto } from './dto/rename.file.dto';
+import { QueriesFilesDto } from './dto/queries.files.dto';
+import { FilesDto } from './dto/files.dto';
+import { SearchDto } from './dto/search.dto';
+import { SearchFileResponse } from './responses/search.file.response';
 
 @Controller('api/v1/files')
 @ApiTags('file')
@@ -81,8 +78,7 @@ export class FileController {
     name: 'limit',
     type: 'number',
     required: false,
-    description:
-      'Number of elements of page used for the pagination of the results',
+    description: 'Number of elements of page used for the pagination of the results',
   })
   @ApiQuery({
     name: 'sort',
@@ -104,86 +100,21 @@ export class FileController {
   })
   async getFiles(
     @Req() req: RequestPayload,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
-    @Query('sort') sort: string,
-    @Query('order') order: string,
+    @Query() { page, limit, sort, order }: QueriesFilesDto,
   ): Promise<
     ResponseMessageWithData<{
       files: File[];
     }>
   > {
-    let files: File[] = [];
-    if (
-      page === undefined &&
-      limit === undefined &&
-      order === undefined &&
-      sort === undefined
-    ) {
-      files = await this.fileService.getFiles(req.user.sub);
-    } else {
-      if (page) {
-        if (sort) {
-          if (limit) {
-            if (order) {
-              files = await this.fileService.getFiles(
-                req.user.sub,
-                page,
-                sort as Sort,
-                limit,
-                order as Order,
-              );
-            } else {
-              files = await this.fileService.getFiles(
-                req.user.sub,
-                page,
-                sort as Sort,
-                limit,
-              );
-            }
-          } else {
-            if (order) {
-              files = await this.fileService.getFiles(
-                req.user.sub,
-                page,
-                sort as Sort,
-                undefined,
-                order as Order,
-              );
-            } else {
-              files = await this.fileService.getFiles(
-                req.user.sub,
-                page,
-                sort as Sort,
-              );
-            }
-          }
-        } else {
-          files = await this.fileService.getFiles(req.user.sub, page);
-        }
-      }
-      if (sort && page === undefined) {
-        if (order) {
-          files = await this.fileService.getFiles(
-            req.user.sub,
-            undefined,
-            sort as Sort,
-            undefined,
-            order as Order,
-          );
-        } else {
-          files = await this.fileService.getFiles(
-            req.user.sub,
-            undefined,
-            sort as Sort,
-          );
-        }
-      }
-    }
-    return {
-      data: { files },
-      message: 'Files imported successfully',
+    const paramsDto: FilesDto = {
+      userId: req.user.sub,
+      page: page,
+      sort: sort as Sort,
+      limit: limit,
+      order: order as Order,
     };
+    const files = await this.fileService.getFiles(paramsDto);
+    return { data: { files }, message: 'Files list' };
   }
 
   @Get('bin')
@@ -197,8 +128,7 @@ export class FileController {
     name: 'limit',
     type: 'number',
     required: false,
-    description:
-      'Number of elements of page used for the pagination of the results',
+    description: 'Number of elements per page',
   })
   @ApiQuery({
     name: 'sort',
@@ -216,86 +146,22 @@ export class FileController {
     type: ResponseMessageWithData<{
       files: FileResponse[];
     }>,
-    description: 'Moved files in the bin with message',
   })
   async getFilesBin(
     @Req() req: RequestPayload,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
-    @Query('sort') sort: string,
-    @Query('order') order: string,
+    @Query() { page, limit, sort, order }: QueriesFilesDto,
   ): Promise<
     ResponseMessageWithData<{
       files: File[];
     }>
   > {
-    let files: File[] = [];
-    if (
-      page === undefined &&
-      limit === undefined &&
-      order === undefined &&
-      sort === undefined
-    ) {
-      files = await this.fileService.getFilesBin(req.user.sub);
-    } else {
-      if (page) {
-        if (sort) {
-          if (limit) {
-            if (order) {
-              files = await this.fileService.getFilesBin(
-                req.user.sub,
-                page,
-                sort as Sort,
-                limit,
-                order as Order,
-              );
-            } else {
-              files = await this.fileService.getFilesBin(
-                req.user.sub,
-                page,
-                sort as Sort,
-                limit,
-              );
-            }
-          } else {
-            if (order) {
-              files = await this.fileService.getFilesBin(
-                req.user.sub,
-                page,
-                sort as Sort,
-                undefined,
-                order as Order,
-              );
-            } else {
-              files = await this.fileService.getFilesBin(
-                req.user.sub,
-                page,
-                sort as Sort,
-              );
-            }
-          }
-        } else {
-          files = await this.fileService.getFilesBin(req.user.sub, page);
-        }
-      }
-      if (sort && page === undefined) {
-        if (order) {
-          files = await this.fileService.getFilesBin(
-            req.user.sub,
-            undefined,
-            sort as Sort,
-            undefined,
-            order as Order,
-          );
-        } else {
-          files = await this.fileService.getFilesBin(
-            req.user.sub,
-            undefined,
-            sort as Sort,
-          );
-        }
-      }
-    }
+    const files = await this.fileService.getFilesBin({
+      userId: req.user.sub,
+      page: page,
+      sort: sort as Sort,
+      limit: limit,
+      order: order as Order,
+    });
     return {
       data: { files },
       message: 'Files list in the bin',
@@ -316,12 +182,7 @@ export class FileController {
   }
 
   @Get('search')
-  @ApiQuery({
-    name: 'name',
-    type: 'string',
-    required: false,
-    description: 'Name of the file',
-  })
+  @ApiQuery({ name: 'name', type: 'string', required: false, description: 'Name of the file' })
   @ApiQuery({
     name: 'typeFile',
     type: 'string',
@@ -337,146 +198,34 @@ export class FileController {
     name: 'page',
     type: 'number',
     required: false,
-    description: 'Number of page used for the pagination of the results',
+    description: 'Number of page for pagination',
   })
   @ApiQuery({
     name: 'limit',
     type: 'number',
     required: false,
-    description:
-      'Number of elements of page used for the pagination of the results',
+    description: 'Number of elements per page',
   })
   @ApiQuery({
     name: 'sort',
     type: 'string',
     required: false,
-    description: 'Field (name,updatedAt) used to sort the results',
+    description: 'Field (name,updatedAt) to sort',
   })
   @ApiQuery({
     name: 'order',
     type: 'string',
     required: false,
-    description: 'Type of order used to sort the results (ASC, DESC)',
+    description: 'Order type (ASC, DESC)',
   })
   @ApiOkResponse({
-    type: ResponseMessageWithData<{
-      files: FileResponse[];
-    }>,
-    description:
-      'Search results with the number of results and the response message',
+    type: ResponseMessageWithData<SearchFileResponse>,
   })
-  async searchFiles(
-    @Query('name') name: string,
-    @Query('typeFile') typeFile: string,
-    @Query('updatedAt') updatedAt: Date,
-    @Req() req: RequestPayload,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
-    @Query('sort') sort: string,
-    @Query('order') order: string,
-  ): Promise<
-    ResponseMessageWithData<{
-      files: File[];
-      numberResults: number;
-    }>
-  > {
-    let files: File[] = [];
-    if (
-      page === undefined &&
-      limit === undefined &&
-      order === undefined &&
-      sort === undefined
-    ) {
-      files = await this.fileService.searchFiles(
-        req.user.sub,
-        updatedAt,
-        name,
-        typeFile,
-      );
-    } else {
-      if (page) {
-        if (sort) {
-          if (limit) {
-            if (order) {
-              files = await this.fileService.searchFiles(
-                req.user.sub,
-                updatedAt,
-                name,
-                typeFile,
-                page,
-                sort as Sort,
-                limit,
-                order as Order,
-              );
-            } else {
-              files = await this.fileService.searchFiles(
-                req.user.sub,
-                updatedAt,
-                name,
-                typeFile,
-                page,
-                sort as Sort,
-                limit,
-              );
-            }
-          } else {
-            if (order) {
-              files = await this.fileService.searchFiles(
-                req.user.sub,
-                updatedAt,
-                name,
-                typeFile,
-                page,
-                sort as Sort,
-                undefined,
-                order as Order,
-              );
-            } else {
-              files = await this.fileService.searchFiles(
-                req.user.sub,
-                updatedAt,
-                name,
-                typeFile,
-                page,
-                sort as Sort,
-              );
-            }
-          }
-        } else {
-          files = await this.fileService.searchFiles(
-            req.user.sub,
-            updatedAt,
-            name,
-            typeFile,
-            page,
-          );
-        }
-      }
-      if (sort && page === undefined) {
-        if (order) {
-          files = await this.fileService.searchFiles(
-            req.user.sub,
-            updatedAt,
-            name,
-            typeFile,
-            undefined,
-            sort as Sort,
-            undefined,
-            order as Order,
-          );
-        } else {
-          files = await this.fileService.searchFiles(
-            req.user.sub,
-            updatedAt,
-            name,
-            typeFile,
-            undefined,
-            sort as Sort,
-          );
-        }
-      }
-    }
-    console.log(files);
+  async searchFiles(@Req() req: RequestPayload, @Query() queries: SearchDto): Promise<ResponseMessageWithData<SearchFileResponse>> {
+    const files = await this.fileService.searchFiles({
+      ...queries,
+      userId: req.user.sub,
+    });
     return {
       data: { files, numberResults: files.length },
       message: 'Search results displayed successfully',
@@ -490,7 +239,7 @@ export class FileController {
     type: ResponseMessageWithData<{ url: string }>,
     description: 'Url file',
   })
-  async viewUrlFile(@Param('idFile', ParseIntPipe) idFile: number): Promise<ResponseMessageWithData<{url: string}>> {
+  async viewUrlFile(@Param('idFile', ParseIntPipe) idFile: number): Promise<ResponseMessageWithData<{ url: string }>> {
     const url = await this.fileService.getFileUrl(idFile);
     return {
       data: { url },
@@ -512,10 +261,7 @@ export class FileController {
     }>
   > {
     const owner = await this.fileService.getOwnerFile(idFile);
-    console.log(
-      '🚀 ~ file.controller.ts:164 ~ FileController ~ getOwnerFile ~ owner:',
-      owner,
-    );
+    console.log('🚀 ~ file.controller.ts:164 ~ FileController ~ getOwnerFile ~ owner:', owner);
     return {
       data: { owner },
       message: 'Owner of the file displayed successfully',
@@ -536,10 +282,7 @@ export class FileController {
     }>
   > {
     const file = await this.fileService.moveFileToBin(idFile);
-    console.log(
-      '🚀 ~ file.controller.ts:388 ~ FileController ~ moveFileToBin ~ file:',
-      file,
-    );
+    console.log('🚀 ~ file.controller.ts:388 ~ FileController ~ moveFileToBin ~ file:', file);
     return {
       data: { file },
       message: 'File moved to the bin',
@@ -560,16 +303,12 @@ export class FileController {
     }>
   > {
     const file = await this.fileService.moveFileToHome(idFile);
-    console.log(
-      '🚀 ~ file.controller.ts:525 ~ FileController ~ moveFileToHome ~ file:',
-      file,
-    );
+    console.log('🚀 ~ file.controller.ts:525 ~ FileController ~ moveFileToHome ~ file:', file);
     return {
       data: { file },
       message: 'File moved to the home',
     };
   }
-
 
   @Patch(':idFile/rename')
   @ApiParam({ name: 'idFile', type: 'number', description: 'Id of file' })
@@ -579,16 +318,19 @@ export class FileController {
     }>,
     description: 'Renamed file',
   })
-  async renameFile(@Param('idFile', ParseIntPipe) idFile: number, @Body() body: RenameFileDto): Promise<
+  async renameFile(
+    @Param('idFile', ParseIntPipe) idFile: number,
+    @Body() body: RenameFileDto,
+  ): Promise<
     ResponseMessageWithData<{
       file: File;
     }>
   > {
     const file = await this.fileService.renameFile(idFile, body);
     if (file === null) {
-      throw new NotFoundException()
+      throw new NotFoundException();
     }
-    console.log("🚀 ~ file.controller.ts:572 ~ FileController ~ renameFile ~ file:", file)
+    console.log('🚀 ~ file.controller.ts:572 ~ FileController ~ renameFile ~ file:', file);
 
     return {
       data: { file },
@@ -618,17 +360,17 @@ export class FileController {
   @Get(':idFile')
   @ApiOkResponse({
     type: ResponseMessageWithData<{
-      file: FileResponse
+      file: FileResponse;
     }>,
     description: 'File details displayed successfully',
   })
   async getDetailsFile(@Param('idFile', ParseIntPipe) id: number): Promise<
     ResponseMessageWithData<{
-      file: FileResponse
+      file: FileResponse;
     }>
   > {
     const file = await this.fileService.detailsFile(id);
-    console.log("🚀 ~ file.controller.ts:616 ~ FileController ~ getDetailsFile ~ file:", file)
+    console.log('🚀 ~ file.controller.ts:616 ~ FileController ~ getDetailsFile ~ file:', file);
     return {
       data: { file },
       message: 'File details displayed successfully',

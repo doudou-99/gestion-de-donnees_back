@@ -1,14 +1,16 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { File } from '@prisma/client';
 import { importDto } from './dto/import.dto';
 import { RenameFileDto } from './dto/rename.file.dto';
-import {S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, RenameObjectCommand, CopyObjectCommand} from '@aws-sdk/client-s3';
-import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
+import { S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
+import 'multer';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { FilesDto } from './dto/files.dto';
+import { SearchDto } from './dto/search.dto';
 
 export type Sort = 'name' | 'updatedAt';
 export type Order = 'ASC' | 'DESC';
-
 
 @Injectable()
 export class FileService {
@@ -17,24 +19,21 @@ export class FileService {
     this.s3Client = new S3Client({
       region: process.env.AWS_REGION,
       credentials: {
-           accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-           secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       },
       maxAttempts: 3,
- });
+    });
   }
 
-  async importFiles(
-    files: Array<Express.Multer.File>,
-    userId: number,
-  ): Promise<File[]> {
-    let filesImport: File[] = [];
+  async importFiles(files: Array<Express.Multer.File>, userId: number): Promise<File[]> {
+    const filesImport: File[] = [];
     const totalSizesBucket = await this.getTotalSizeObjets();
-    if (totalSizesBucket >= (5 * 1024 * 1024 *1024)) throw new BadRequestException("Space in AWS S3 is filled.")
+    if (totalSizesBucket >= 5 * 1024 * 1024 * 1024) throw new BadRequestException('Space in AWS S3 is filled.');
     for (let i = 0; i < files.length; i++) {
-      const totalSizes: number = files.reduce<number>((prev, current) => prev+current.size,0);
+      const totalSizes: number = files.reduce<number>((prev, current) => prev + current.size, 0);
       const key = `${files[i].originalname}_user_${userId}`;
-      if (totalSizes > (5 * 1024 *1024 *1024)) throw new BadRequestException("The files are too large.")
+      if (totalSizes > 5 * 1024 * 1024 * 1024) throw new BadRequestException('The files are too large.');
       const dataFiles: importDto = {
         name: files[i].originalname,
         mimeType: files[i].mimetype,
@@ -49,8 +48,8 @@ export class FileService {
         Body: files[i].buffer,
         ContentType: files[i].mimetype,
         Metadata: {
-          originalName: Buffer.from(files[i].originalname).toString('base64')        
-        }
+          originalName: Buffer.from(files[i].originalname).toString('base64'),
+        },
       };
       await this.s3Client.send(new PutObjectCommand(params));
       const addFile = await this.prisma.file.create({
@@ -63,19 +62,20 @@ export class FileService {
   }
 
   async getTotalSizeObjets() {
-    const objects = new ListObjectsV2Command({Bucket: process.env.AWS_BUCKET_NAME});
+    const objects = new ListObjectsV2Command({
+      Bucket: process.env.AWS_BUCKET_NAME,
+    });
     const response = await this.s3Client.send(objects);
     console.log(response);
     if (!response.Contents || response.Contents.length === 0) {
-        return 0;
+      return 0;
     }
 
     const sizeFile = response.Contents.reduce((total, obj) => {
       return total + (obj.Size || 0);
     }, 0);
-    console.log("🚀 ~ file.service.ts:89 ~ FileService ~ getTotalSizeObjets ~ sizeFile:", sizeFile)
+    console.log('🚀 ~ file.service.ts:89 ~ FileService ~ getTotalSizeObjets ~ sizeFile:', sizeFile);
 
-    
     return sizeFile;
   }
 
@@ -85,61 +85,16 @@ export class FileService {
    * sort is used for sorting the files by name or date
    * order for descending or ascending order of files
    */
-  async getFiles(
-    userId: number,
-    page?: number,
-    sort?: Sort,
-    limit: number = 10,
-    order: Order = 'ASC',
-  ) {
-    const whereFilters: Record<string, any> = {
-      userId,
-      OR: [
-        {
-          status: 'HOME',
-        },
-        {
-          status: null,
-        },
-      ],
-    };
-    if (page) {
-      if (sort) {
-        let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
-        const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
-        console.log([sortFilter], page);
-        return await this.prisma.file.findMany({
-          skip: (page - 1) * limit,
-          take: limit,
-          where: whereFilters,
-          orderBy: {
-            [sortFilter]: orderSort.toLowerCase(),
-          },
-        });
-      } else {
-        return await this.prisma.file.findMany({
-          skip: (page - 1) * limit,
-          take: limit,
-          where: whereFilters,
-        });
-      }
-    }
-    if (sort) {
-      let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
-      const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
-
-      return await this.prisma.file.findMany({
-        where: whereFilters,
-        orderBy: {
-          [sortFilter]: orderSort.toLowerCase(),
-        },
-      });
-    }
-    return await this.prisma.file.findMany({
-      where: whereFilters,
+  async getFiles(params: FilesDto) {
+    return this.prisma.file.findMany({
+      where: {
+        userId: params.userId,
+        OR: [{ status: 'HOME' }, { status: null }],
+      },
+      orderBy: this.buildOrderBy(params.sort, params.order),
+      ...this.buildPagination(params.page, params.limit),
     });
   }
-
 
   /**
    * Get the url of file to view the file
@@ -149,9 +104,47 @@ export class FileService {
     const fileDetail = await this.detailsFile(id);
     const key = `${fileDetail.name}_user_${fileDetail.userId}`;
 
-    const command = new GetObjectCommand({Bucket: process.env.AWS_BUCKET_NAME, Key: key, ResponseContentDisposition: "inline"});
-    const url = await getSignedUrl(this.s3Client, command, {expiresIn: 60 * 24 *24})
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+      ResponseContentDisposition: 'inline',
+    });
+    const url = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 60 * 24 * 24,
+    });
     return url;
+  }
+
+  private buildDateRange(updatedAt: string) {
+    const d = new Date(Date.parse(updatedAt));
+    return {
+      gte: new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)),
+      lte: new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)),
+    };
+  }
+
+  private buildWhereFilters(dto: SearchDto): Record<string, unknown> {
+    return {
+      userId: dto.userId,
+      OR: [{ status: 'HOME' }, { status: null }],
+      ...(dto.name && { name: { contains: dto.name } }),
+      ...(dto.typeFile && { mimeType: { contains: dto.typeFile } }),
+      ...(dto.updatedAt &&
+        typeof dto.updatedAt === 'string' && {
+          updatedAt: this.buildDateRange(dto.updatedAt),
+        }),
+    };
+  }
+
+  private buildPagination(page?: number, limit: number = 10): { skip: number; take: number } | Record<never, never> {
+    return page ? { skip: (page - 1) * limit, take: limit } : {};
+  }
+  private buildOrderBy(sort?: string, order?: string) {
+    return sort
+      ? {
+          [sort === 'name' ? 'name' : 'updatedAt']: order === 'DESC' ? 'desc' : 'asc',
+        }
+      : undefined;
   }
 
   /**
@@ -160,99 +153,14 @@ export class FileService {
    * sort is used for sorting the files by name or date
    * order for descending or ascending order of files
    */
-  async searchFiles(
-    userId: number,
-    updatedAt: Date | null,
-    name?: string,
-    typeFile?: string,
-    page?: number,
-    sort?: Sort,
-    limit: number = 10,
-    order: Order = 'ASC',
-  ) {
-    let whereFilters: Record<string, any> = {
-      userId: userId,
-      OR: [
-        {
-          status: 'HOME',
-        },
-        {
-          status: null,
-        },
-      ],
-    };
-    if (name === undefined && typeFile === undefined && updatedAt === null) {
-      return [];
-    } else {
-      if (name) whereFilters['name'] = { contains: name };
-      if (typeFile) whereFilters['mimeType'] = { contains: typeFile };
-      if (updatedAt && updatedAt !== null && typeof updatedAt === 'string') {
-        const updated = new Date(Date.parse(updatedAt));
-        const start = new Date(
-          Date.UTC(
-            updated.getFullYear(),
-            updated.getMonth(),
-            updated.getDate(),
-            0,
-            0,
-            0,
-            0,
-          ),
-        );
-        const end = new Date(
-          Date.UTC(
-            updated.getFullYear(),
-            updated.getMonth(),
-            updated.getDate(),
-            23,
-            59,
-            59,
-            999,
-          ),
-        );
-        whereFilters['updatedAt'] = {
-          gte: start,
-          lte: end,
-        };
-      }
+  async searchFiles(dto: SearchDto) {
+    if (!dto.name && !dto.typeFile && dto.updatedAt === null) return [];
 
-      console.log(whereFilters);
-      if (page) {
-        if (sort) {
-          let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
-          const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
-          console.log([sortFilter], page, whereFilters);
-          return await this.prisma.file.findMany({
-            skip: (page - 1) * limit,
-            take: limit,
-            where: whereFilters,
-            orderBy: {
-              [sortFilter]: orderSort.toLowerCase(),
-            },
-          });
-        } else {
-          return await this.prisma.file.findMany({
-            skip: (page - 1) * limit,
-            take: limit,
-            where: whereFilters,
-          });
-        }
-      }
-      if (sort) {
-        let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
-        const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
-
-        return await this.prisma.file.findMany({
-          where: whereFilters,
-          orderBy: {
-            [sortFilter]: orderSort.toLowerCase(),
-          },
-        });
-      }
-      return await this.prisma.file.findMany({
-        where: whereFilters,
-      });
-    }
+    return this.prisma.file.findMany({
+      where: this.buildWhereFilters(dto),
+      orderBy: this.buildOrderBy(dto.sort, dto.order),
+      ...this.buildPagination(dto.page, dto.limit),
+    });
   }
 
   /**
@@ -291,51 +199,11 @@ export class FileService {
    * sort is used for sorting the files by name or date
    * order for descending or ascending order of files
    */
-  async getFilesBin(
-    userId: number,
-    page?: number,
-    sort?: Sort,
-    limit: number = 10,
-    order: Order = 'ASC',
-  ) {
-    const whereFilters: Record<string, any> = {
-      userId,
-      status: 'BIN',
-    };
-    if (page) {
-      if (sort) {
-        let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
-        const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
-        console.log([sortFilter], page);
-        return await this.prisma.file.findMany({
-          skip: (page - 1) * limit,
-          take: limit,
-          where: whereFilters,
-          orderBy: {
-            [sortFilter]: orderSort.toLowerCase(),
-          },
-        });
-      } else {
-        return await this.prisma.file.findMany({
-          skip: (page - 1) * limit,
-          take: limit,
-          where: whereFilters,
-        });
-      }
-    }
-    if (sort) {
-      let sortFilter = sort === 'name' ? 'name' : 'updatedAt';
-      const orderSort = order === 'DESC' ? 'DESC' : 'ASC';
-
-      return await this.prisma.file.findMany({
-        where: whereFilters,
-        orderBy: {
-          [sortFilter]: orderSort.toLowerCase(),
-        },
-      });
-    }
-    return await this.prisma.file.findMany({
-      where: whereFilters,
+  async getFilesBin(params: FilesDto) {
+    return this.prisma.file.findMany({
+      where: { userId: params.userId, status: 'BIN' },
+      orderBy: this.buildOrderBy(params.sort, params.order),
+      ...this.buildPagination(params.page, params.limit),
     });
   }
 
@@ -365,23 +233,22 @@ export class FileService {
             groupId: true,
             accessType: true,
             expirationDate: true,
-          }
+          },
         },
         sharesUsers: {
           select: {
             accessType: true,
             fileId: true,
             userId: true,
-            expirationDate: true
-          }
+            expirationDate: true,
+          },
         },
       },
       where: {
-        id: idFile
+        id: idFile,
       },
     });
   }
-
 
   /**
    * Rename file with a new name
@@ -403,11 +270,11 @@ export class FileService {
     await this.s3Client.send(commandCopy);
     await this.s3Client.send(command);
     return await this.prisma.file.update({
-      data: { name: data.name, path: "/"+data.name},
+      data: { name: data.name, path: '/' + data.name },
       where: {
-        id
-      }
-    })
+        id,
+      },
+    });
   }
 
   /**
@@ -417,16 +284,16 @@ export class FileService {
   async detailsFile(id: number) {
     return await this.prisma.file.findUniqueOrThrow({
       where: {
-        id
-      }
-    })
+        id,
+      },
+    });
   }
 
   /**
    * Delete files
    */
   async deleteFiles(files: number[]) {
-    for (let id of files) {
+    for (const id of files) {
       const file = await this.detailsFile(id);
       const key = `${file.name}_user_${file.userId}`;
 

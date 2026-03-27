@@ -1,23 +1,23 @@
-import { EnumAccessType } from "@prisma/client";
-import { IsArray, IsDateString, IsEnum, IsNotEmpty, IsOptional } from "class-validator";
+import { EnumAccessType } from '@prisma/client';
+import { IsArray, IsDateString, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class SharesCreateDto {
-    @IsArray()
-    @IsNotEmpty()
-    @IsOptional()
-    users?: number[];
+  @IsArray()
+  @IsNotEmpty()
+  @IsOptional()
+  users?: number[];
 
-    @IsArray()
-    @IsNotEmpty()
-    @IsOptional()
-    groups?: number[];
+  @IsArray()
+  @IsNotEmpty()
+  @IsOptional()
+  groups?: number[];
 
-    @IsDateString()
-    @IsNotEmpty()
-    @IsOptional()
-    expirationDate?: Date;
+  @IsDateString()
+  @IsNotEmpty()
+  @IsOptional()
+  expirationDate?: Date;
 
-    @IsEnum(EnumAccessType)
-    @IsNotEmpty()
-    accessType: EnumAccessType;
+  @IsEnum(EnumAccessType)
+  @IsNotEmpty()
+  accessType: EnumAccessType;
 }
