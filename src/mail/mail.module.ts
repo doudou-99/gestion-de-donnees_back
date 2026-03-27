@@ -10,22 +10,22 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         transport: {
-          host: config.get("SMTP_HOST"),
-          port: +config.get("SMTP_PORT"),
+          host: config.get('SMTP_HOST'),
+          port: +config.get('SMTP_PORT'),
           secureConnection: false,
           auth: {
-            user: config.get("MAIL_USERNAME"),
-            pass: config.get("MAIL_PASSWORD"),
+            user: config.get('MAIL_USERNAME'),
+            pass: config.get('MAIL_PASSWORD'),
           },
-          logger: false
+          logger: false,
         },
         defaults: {
-          from: config.get("MAIL_USERNAME")
-        }
+          from: config.get('MAIL_USERNAME'),
+        },
       }),
     }),
   ],
   providers: [MailService],
-  exports: [MailService]
+  exports: [MailService],
 })
 export class MailModule {}

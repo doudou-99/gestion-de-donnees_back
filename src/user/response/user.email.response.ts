@@ -1,3 +1,3 @@
 export interface UserEmailResponse {
-    email: string;
+  email: string;
 }

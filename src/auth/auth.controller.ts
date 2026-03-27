@@ -22,17 +22,15 @@ import { RefreshTokenGuard } from './guard/refresh.token.guard';
 import { SignupDto } from './dto/signup.dto';
 import { User } from '@prisma/client';
 import type { Response } from 'express';
-import {
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { UserResponse } from './interface/user.response';
 import { AccessTokenGuard } from './guard/access.token.guard';
 import { ConfirmTokenGuard } from './guard/confirm.token.guard';
 import { ResponseMessage } from '../responses/response.message';
 import { ConfirmDTO } from './dto/confirm.dto';
+import { SigninResponse } from './interface/signin.response';
+import { RefreshResponse } from './interface/refresh.response';
+import { UpsertTokenDto } from './interface/upsert.token.dto';
 
 @Controller('api/v1/auth')
 @ApiTags('auth')
@@ -55,13 +53,9 @@ export class AuthController {
     }>
   > {
     body.password = await this.authService.hash(body.password);
-    if (body.extraEmail === undefined || body.extraEmail === '')
-      body.extraEmail = undefined;
+    if (body.extraEmail === undefined || body.extraEmail === '') body.extraEmail = undefined;
     const user = await this.userService.create(body);
-    console.log(
-      '🚀 ~ auth.controller.ts:54 ~ AuthController ~ signUp ~ user:',
-      user,
-    );
+    console.log('🚀 ~ auth.controller.ts:54 ~ AuthController ~ signUp ~ user:', user);
 
     //Confirm token
     const confirm_token = await this.authService.generateToken(
@@ -72,7 +66,12 @@ export class AuthController {
       },
     );
     const hashed = await this.authService.hash(confirm_token);
-    await this.authService.upsertToken(user.id, hashed, 'ACTIVATEACCOUNT');
+    const upsertDto: UpsertTokenDto = {
+      userId: user.id,
+      token: hashed,
+      type: 'ACTIVATEACCOUNT',
+    };
+    await this.authService.upsertToken(upsertDto);
     await this.authService.sendConfirmEmail(body.email, confirm_token);
     return {
       data: { user },
@@ -96,7 +95,11 @@ export class AuthController {
       },
     );
     const hashed = await this.authService.hash(confirm_token);
-    await this.authService.upsertToken(user.id, hashed, 'ACTIVATEACCOUNT');
+    await this.authService.upsertToken({
+      userId: user.id,
+      token: hashed,
+      type: 'ACTIVATEACCOUNT',
+    });
     await this.authService.sendConfirmEmail(user.email, confirm_token);
     return {
       message: 'Confirmation email sent',
@@ -107,118 +110,62 @@ export class AuthController {
   @UseGuards(ConfirmTokenGuard)
   @ApiOkResponse()
   @Get('confirm/:token')
-  async confirm(
-    @Req() req: RequestPayload,
-    @Param('token') token: string,
-    @Res() res: Response,
-  ) {
+  async confirm(@Req() req: RequestPayload, @Param('token') token: string, @Res() res: Response) {
     const tokenDB = await this.authService.findUniqueToken(req.user.sub, token);
     if (tokenDB.type !== 'ACTIVATEACCOUNT') {
       return res.redirect(process.env.FRONT_URL + '/signin');
     }
     const compare = await this.authService.compare(tokenDB.token, token);
-    console.log(
-      '🚀 ~ auth.controller.ts:92 ~ AuthController ~ confirm ~ compare:',
-      compare,
-    );
+    console.log('🚀 ~ auth.controller.ts:92 ~ AuthController ~ confirm ~ compare:', compare);
 
     if (!compare) {
       return res.redirect(process.env.FRONT_URL + '/signin');
     }
-
-    let user = await this.userService.getById(req.user.sub);
-    console.log(
-      '🚀 ~ auth.controller.ts:98 ~ AuthController ~ confirm ~ user:',
-      user,
-    );
-
+    const user = await this.userService.getById(req.user.sub);
+    console.log('🚀 ~ auth.controller.ts:98 ~ AuthController ~ confirm ~ user:', user);
     if (user.status !== 'NOT_CONFIRMED') {
       return res.redirect(process.env.FRONT_URL + '/signin');
     }
     await this.userService.updateUser(req.user.sub, {
       status: 'CONFIRMED',
     });
-
-    const updatedUser = await this.userService.getById(req.user.sub)
-  
+    const updatedUser = await this.userService.getById(req.user.sub);
     if (updatedUser.status !== 'CONFIRMED') {
       return res.redirect(process.env.FRONT_URL + '/signin');
     }
-
-    console.log(
-      '🚀 ~ auth.controller.ts:104 ~ AuthController ~ confirm ~ user:',
-      updatedUser,
-    );
+    console.log('🚀 ~ auth.controller.ts:104 ~ AuthController ~ confirm ~ user:', updatedUser);
     await this.authService.deleteToken(tokenDB.userId, tokenDB.token);
-
     return res.redirect(process.env.FRONT_URL + '/confirmation');
   }
 
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
-    type: ResponseMessageWithData<{
-      user: loginInterface;
-      access_token: string;
-      refresh_token: string;
-    }>,
+    type: ResponseMessageWithData<SigninResponse>,
   })
   @Post('signin')
   async signIn(
     @Body() body: SigninDTO,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<
-    ResponseMessageWithData<{
-      user: loginInterface;
-      access_token: string;
-      refresh_token: string;
-    }>
-  > {
+  ): Promise<ResponseMessageWithData<SigninResponse>> {
     const user = await this.userService.getByEmail(body.email);
-    console.log("🚀 ~ auth.controller.ts:173 ~ AuthController ~ signIn ~ user:", user)
-    const compare = await this.authService.compare(
-      user.password,
-      body.password,
-    );
-    if (!compare) {
-      throw new PreconditionFailedException('Bad credentials');
-    }
-    if (user.status === 'NOT_CONFIRMED') {
-      throw new PreconditionFailedException('Not verified');
-    }
-    
-    console.log(user, compare);
+    const compare = await this.authService.compare(user.password, body.password);
+    if (!compare) throw new PreconditionFailedException('Bad credentials');
+    if (user.status === 'NOT_CONFIRMED') throw new PreconditionFailedException('Not verified');
     const login: loginInterface = {
       id: user.id,
       email: user.email,
       password: user.password,
     };
-    const access_token = await this.authService.generateToken(
-      { sub: user.id },
-      {
-        secret: process.env.SECRET_KEY,
-        expiresIn: '60s',
-      },
-    );
-    const refresh_token = await this.authService.generateToken(
-      { sub: user.id },
-      {
-        algorithm: 'HS512',
-        secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '15m',
-      },
-    );
-
+    const access_token = await this.authService.createAccessToken(user.id);
+    const refresh_token = await this.authService.createRefreshToken(user.id);
     const hashedRefresh = await this.authService.hash(refresh_token);
-
-    await this.authService.upsertToken(user.id, hashedRefresh);
-    res.cookie('refreshToken', refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
+    const t: UpsertTokenDto = {
+      userId: user.id,
+      token: hashedRefresh,
+      type: 'REFRESHTOKEN',
+    };
+    await this.authService.upsertToken(t);
+    this.authService.createRefreshTokenCookie(res, refresh_token, 7 * 24 * 60 * 60 * 1000);
     return {
       data: { user: login, access_token, refresh_token },
       message: 'The user is connected',
@@ -228,75 +175,30 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOkResponse({
-    type: ResponseMessageWithData<{
-      access_token: string;
-      refresh_token: string;
-    }>,
+    type: ResponseMessageWithData<RefreshResponse>,
   })
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
   async refresh(
     @Req() req: RequestPayload,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<
-    ResponseMessageWithData<{
-      access_token: string;
-      refresh_token: string;
-    }>
-  > {
+  ): Promise<ResponseMessageWithData<RefreshResponse>> {
     const user = await this.userService.getById(req.user.sub);
-    const tokenDB = await this.authService.findUniqueToken(
-      req.user.sub,
-      req.cookies['refreshToken'],
-    );
-    console.log(
-      '🚀 ~ auth.controller.ts:161 ~ AuthController ~ refresh ~ tokenDB:',
-      tokenDB,
-    );
-
-    const compare = await this.authService.compare(
-      tokenDB.token,
-      req.cookies['refreshToken'],
-    );
-    console.log(
-      '🚀 ~ auth.controller.ts:165 ~ AuthController ~ refresh ~ compare:',
-      compare,
-    );
-
-    if (!compare) {
-      throw new UnauthorizedException();
-    }
-    const access_token = await this.authService.generateToken(
-      { sub: user.id },
-      {
-        secret: process.env.SECRET_KEY,
-        expiresIn: '60s',
-      },
-    );
-    const refresh_token = await this.authService.generateToken(
-      { sub: user.id },
-      {
-        algorithm: 'HS512',
-        secret: process.env.SECRET_REFRESH_KEY,
-        expiresIn: '15m',
-      },
-    );
-
+    const refreshCookies: string = <string>req.cookies['refreshToken'];
+    const tokenDB = await this.authService.findUniqueToken(req.user.sub, refreshCookies);
+    const compare = await this.authService.compare(tokenDB.token, refreshCookies);
+    if (!compare) throw new UnauthorizedException();
+    const access_token = await this.authService.createAccessToken(user.id);
+    const refresh_token = await this.authService.createRefreshToken(user.id);
     const hashedRefresh = await this.authService.hash(refresh_token);
-
-    await this.authService.upsertToken(
-      user.id,
-      hashedRefresh,
-      'REFRESHTOKEN',
-      tokenDB.token,
-    );
-    res.cookie('refreshToken', refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    const upsertDto: UpsertTokenDto = {
+      userId: user.id,
+      token: hashedRefresh,
+      type: 'REFRESHTOKEN',
+      ancienToken: tokenDB.token,
+    };
+    await this.authService.upsertToken(upsertDto);
+    this.authService.createRefreshTokenCookie(res, refresh_token, 7 * 24 * 60 * 60 * 1000);
     return {
       data: { access_token, refresh_token },
       message: 'The refresh and access token is created',

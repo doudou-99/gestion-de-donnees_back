@@ -1,17 +1,4 @@
-import {
-    BadRequestException,
-    Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { SharesCreateDto } from './dto/shares.create.dto';
 import { ShareService } from './share.service';
 import { ResponseMessageWithData } from '../responses/response.message.with.data';
@@ -22,7 +9,6 @@ import type { RequestPayload } from '../auth/interface/payload.interface';
 import { ShareAccessUserResponse, ShareAccessGroupResponse } from './response/share.access.response';
 import { AccessShareDto } from './dto/access.share.dto';
 import { ReceiversResponse } from './response/share.receiver.response';
-import { Request } from 'express';
 
 @Controller('api/v1/shares')
 @UseGuards(AccessTokenGuard)
@@ -40,17 +26,18 @@ export class ShareController {
   @Post(':idFile')
   async createShares(
     @Param('idFile', ParseIntPipe) id: number,
-    @Body() data: SharesCreateDto, 
-    @Req() req: RequestPayload
+    @Body() data: SharesCreateDto,
+    @Req() req: RequestPayload,
   ): Promise<
     ResponseMessageWithData<{
       shares: ShareCreateResponse[];
     }>
   > {
     if (data.users !== undefined && data.users.includes(req.user.sub)) {
-        throw new BadRequestException();
+      throw new BadRequestException();
     }
-    const shares = await this.shareService.createShares(id, req.user.sub, data);
+    const idUser = req.user.sub;
+    const shares = await this.shareService.createShares(id, idUser, data);
     return {
       data: { shares },
       message: 'Shares of users or groups that have access right to the file',
@@ -69,7 +56,7 @@ export class ShareController {
   async editAccessTypeShareUser(
     @Param('idFile', ParseIntPipe) id: number,
     @Param('idUser', ParseIntPipe) idUser: number,
-    @Body() data: AccessShareDto
+    @Body() data: AccessShareDto,
   ): Promise<
     ResponseMessageWithData<{
       share: ShareAccessUserResponse;
@@ -78,7 +65,7 @@ export class ShareController {
     const share = await this.shareService.editAccessFileUser(id, idUser, data);
     return {
       data: { share },
-      message: 'User that have access right to the file'
+      message: 'User that have access right to the file',
     };
   }
 
@@ -94,7 +81,7 @@ export class ShareController {
   async editAccessTypeShareGroup(
     @Param('idFile', ParseIntPipe) id: number,
     @Param('idGroup', ParseIntPipe) idGroup: number,
-    @Body() data: AccessShareDto
+    @Body() data: AccessShareDto,
   ): Promise<
     ResponseMessageWithData<{
       share: ShareAccessGroupResponse;
@@ -103,15 +90,14 @@ export class ShareController {
     const share = await this.shareService.editAccessFileGroup(id, idGroup, data);
     return {
       data: { share },
-      message: 'Change of the access type of the group that have access right to the file completed successfully'
+      message: 'Change of the access type of the group that have access right to the file completed successfully',
     };
   }
-
 
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: ResponseMessageWithData<{
-      receivers: ReceiversResponse
+      receivers: ReceiversResponse;
     }>,
     description: 'Users and groups list',
   })
@@ -119,16 +105,15 @@ export class ShareController {
   @Get('receivers')
   async getReceivers(@Req() req: RequestPayload): Promise<
     ResponseMessageWithData<{
-      receivers: ReceiversResponse
+      receivers: ReceiversResponse;
     }>
   > {
     const receivers = await this.shareService.getReceivers(req.user.sub);
-    console.log("🚀 ~ share.controller.ts:124 ~ ShareController ~ getReceivers ~ receivers:", receivers)
+    console.log('🚀 ~ share.controller.ts:124 ~ ShareController ~ getReceivers ~ receivers:', receivers);
 
     return {
       data: { receivers },
-      message: 'Users and groups list'
+      message: 'Users and groups list',
     };
   }
-
 }

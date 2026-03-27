@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { RequestPayloadWithRefresh } from '../interface/payload.interface';
@@ -13,13 +8,11 @@ export class RefreshTokenGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request: RequestPayloadWithRefresh = context
-      .switchToHttp()
-      .getRequest();
-    
-       console.log('All cookies:', request.cookies);
+    const request: RequestPayloadWithRefresh = context.switchToHttp().getRequest();
+
+    console.log('All cookies:', request.cookies);
     console.log('Signed cookies:', request.signedCookies);
-    
+
     const token = this.extractTokenFromCookie(request);
     console.log(token);
     if (!token) {
