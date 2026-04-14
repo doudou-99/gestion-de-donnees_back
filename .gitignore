@@ -2,4 +2,5 @@ data/
 dist/
 .vscode/
 .git/
+.git-rewrite/
 node_modules
