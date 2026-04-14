@@ -1,4 +1,74 @@
 services: 
+  nats:
+    image: nats:alpine
+    restart: always
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test: wget http://localhost:8222/healthz -q -S -O -
+      start_period: 3s
+      retries: 3
+      timeout: 3s
+      interval: 14s
+    networks:
+      - gestion_fichier-network-dev
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/27017"]      
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - gestion_fichier-network-dev
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/notification_db?authSource=admin
+      ME_CONFIG_BASICAUTH_ENABLED: true
+      ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
+      ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - gestion_fichier-network-dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - gestion_fichier-network-dev
   mailpit:
     image: axllent/mailpit
     container_name: mailpit
@@ -27,7 +97,7 @@ services:
       - "3306:3306"
     volumes:
       - db-projet-data:/var/lib/mysql
-      - ./init-user.sql:/docker-entrypoint-initdb.d/init-user.sql    
+      - ./gateway/init-user.sql:/docker-entrypoint-initdb.d/init-user.sql    
     networks:
       - gestion_fichier-network-dev
     healthcheck:
@@ -50,34 +120,54 @@ services:
       PMA_PASSWORD: nestjs_password
     networks:
       - gestion_fichier-network-dev
-  backend:
-    build: 
-      context: .
-      dockerfile: Dockerfile.dev
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: /Dockerfile.dev
+    container_name: gateway-api
+    env_file:
+      - ./gateway/.env.development
     ports:
       - "3000:3000"
-    env_file:
-      - ./.env.development
+      - "9229:9229" 
+    volumes:
+      - ./gateway/src:/app/src
+      - ./gateway/prisma:/app/prisma
+      - ./gateway/init-db.sh:/app/init-db.sh 
     depends_on:
       mysql:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      notification-service:
         condition: service_healthy
     networks:
       - gestion_fichier-network-dev
     restart: unless-stopped
-  frontend:
+
+  notification-service:
     build:
-      context: ../gestion-de-donnees_front
-      dockerfile: Dockerfile.dev
-    env_file:
-      - ./.env.development
-    container_name: react_app
+      context: ./notification
+      dockerfile: /Dockerfile
+    container_name: notification
     ports:
-      - "5173:5173"
+      - "8082:8082"
+    env_file:
+      - ./notification/src/main/resources/application.properties 
     depends_on:
-      - backend
+      mongo:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gestion_fichier-network-dev
     restart: unless-stopped
 
 volumes:
+  mongodb-data:
+  redis-data:
   data:
   db-projet-data:
     driver: local

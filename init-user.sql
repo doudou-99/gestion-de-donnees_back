@@ -1,3 +1,0 @@
-CREATE USER IF NOT EXISTS 'nestjs_user'@'%' IDENTIFIED BY 'root_password';
-GRANT CREATE, ALTER, DROP, REFERENCES ON *.* TO 'nestjs_user'@'%';
-FLUSH PRIVILEGES;
