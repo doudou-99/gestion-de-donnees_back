@@ -36,7 +36,8 @@ export class ShareController {
     if (data.users !== undefined && data.users.includes(req.user.sub)) {
       throw new BadRequestException();
     }
-    const shares = await this.shareService.createShares(id, req.user.sub, data);
+    const idUser = req.user.sub;
+    const shares = await this.shareService.createShares(id, idUser, data);
     return {
       data: { shares },
       message: 'Shares of users or groups that have access right to the file',
