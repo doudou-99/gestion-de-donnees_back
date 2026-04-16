@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # compiled output
 /dist
 /node_modules
@@ -59,3 +60,11 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
 
+=======
+data/
+dist/
+.vscode/
+.git/
+.git-rewrite/
+node_modules
+>>>>>>> staging
