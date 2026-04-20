@@ -26,7 +26,6 @@ public class NotificationApplication {
 				CreateTemplateDto template = new CreateTemplateDto(TypeNotification.REMINDER_EXPIRATION, "Reminder of expiration of right of access to file");
 				CreateTemplateDto templateDto2 = new CreateTemplateDto(TypeNotification.JOINGROUP, "Request to join a group ");
 				CreateTemplateDto templateDto3 = new CreateTemplateDto(TypeNotification.ACCESSFILE, "Request for access to the file");
-				CreateTemplateDto templateDto5 = new CreateTemplateDto(TypeNotification.EXPIRED_TOKEN, "Expired token");
 				CreateTemplateDto templateDtoConfirm = new CreateTemplateDto(TypeNotification.CONFIRM_ACCOUNT, "Confirm account");
 				CreateTemplateDto templateDtoRequest = new CreateTemplateDto(TypeNotification.REQUEST_FILE, "Request of file");
 				CreateTemplateDto templateDtoImport = new CreateTemplateDto(TypeNotification.IMPORT_FILE, "Import of file");
@@ -35,7 +34,6 @@ public class NotificationApplication {
 				templateService.createTemplate(template);
 				templateService.createTemplate(templateDto2);
 				templateService.createTemplate(templateDto3);
-				templateService.createTemplate(templateDto5);
 				templateService.createTemplate(templateDtoConfirm);
 				templateService.createTemplate(templateDtoImport);
 				templateService.createTemplate(templateDtoRequest);

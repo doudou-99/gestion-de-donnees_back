@@ -131,7 +131,6 @@ export class FileController {
       limit: limit,
       order: order,
     };
-    console.log(paramsDto);
     const files = await this.fileService.getFiles(req.user.sub, paramsDto);
     return { data: { files }, message: 'Files list' };
   }
@@ -193,7 +192,6 @@ export class FileController {
   })
   async deleteFiles(@Body() files: number[]): Promise<ResponseMessage> {
     await this.fileService.deleteFiles(files);
-    console.log('Deleted files');
     return {
       message: 'Files deleted successfully',
     };
@@ -279,7 +277,6 @@ export class FileController {
     }>
   > {
     const owner = await this.fileService.getOwnerFile(idFile);
-    console.log('🚀 ~ file.controller.ts:164 ~ FileController ~ getOwnerFile ~ owner:', owner);
     return {
       data: { owner },
       message: 'Owner of the file displayed successfully',
@@ -300,7 +297,6 @@ export class FileController {
     }>
   > {
     const file = await this.fileService.moveFileToBin(idFile);
-    console.log('🚀 ~ file.controller.ts:388 ~ FileController ~ moveFileToBin ~ file:', file);
     return {
       data: { file },
       message: 'File moved to the bin',
@@ -321,7 +317,6 @@ export class FileController {
     }>
   > {
     const file = await this.fileService.moveFileToHome(idFile);
-    console.log('🚀 ~ file.controller.ts:525 ~ FileController ~ moveFileToHome ~ file:', file);
     return {
       data: { file },
       message: 'File moved to the home',
@@ -348,7 +343,6 @@ export class FileController {
     if (file === null) {
       throw new NotFoundException();
     }
-    console.log('🚀 ~ file.controller.ts:572 ~ FileController ~ renameFile ~ file:', file);
 
     return {
       data: { file },
@@ -388,7 +382,6 @@ export class FileController {
     }>
   > {
     const file = await this.fileService.detailsFile(id);
-    console.log('🚀 ~ file.controller.ts:616 ~ FileController ~ getDetailsFile ~ file:', file);
     return {
       data: { file },
       message: 'File details displayed successfully',

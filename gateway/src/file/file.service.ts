@@ -57,7 +57,6 @@ export class FileService {
       });
       filesImport.push(addFile);
     }
-    console.log(filesImport);
     return filesImport;
   }
 
@@ -66,7 +65,6 @@ export class FileService {
       Bucket: process.env.AWS_BUCKET_NAME,
     });
     const response = await this.s3Client.send(objects);
-    console.log(response);
     if (!response.Contents || response.Contents.length === 0) {
       return 0;
     }
@@ -74,7 +72,6 @@ export class FileService {
     const sizeFile = response.Contents.reduce((total, obj) => {
       return total + (obj.Size || 0);
     }, 0);
-    console.log('🚀 ~ file.service.ts:89 ~ FileService ~ getTotalSizeObjets ~ sizeFile:', sizeFile);
 
     return sizeFile;
   }
@@ -86,7 +83,6 @@ export class FileService {
    * order for descending or ascending order of files
    */
   async getFiles(userId: number, params: FilesDto) {
-    console.log(params.sort, params.order, 'orderBy:', this.buildOrderBy(params.sort, params.order));
     const all = await this.prisma.file.findMany({
       where: {
         userId,
@@ -95,11 +91,6 @@ export class FileService {
       orderBy: this.buildOrderBy(params.sort, params.order),
       ...this.buildPagination(params.page, params.limit),
     });
-    console.log('Total files pour cet user:', all.length);
-    console.log(
-      'Statuts:',
-      all.map((f) => f.status),
-    );
     return all;
   }
 

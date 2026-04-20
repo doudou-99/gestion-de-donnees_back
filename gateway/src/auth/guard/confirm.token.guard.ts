@@ -28,7 +28,6 @@ export class ConfirmTokenGuard implements CanActivate {
     const tokenParam = request.params?.token;
     if (!tokenParam) return undefined;
     const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
-    console.log('🚀 ~ confirm.token.guard.ts:37 ~ ConfirmTokenGuard ~ extractTokenFromURL ~ token:', token);
     return token;
   }
 }

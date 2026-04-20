@@ -13,17 +13,14 @@ export class NotificationService {
   create(notificationDto: CreateNotificationRequest): Observable<NotificationResponse> {
     const nats = this.natsClient.send('notification.create', notificationDto).pipe(
       tap((response: NotificationResponse) => {
-        console.log('Notification créée, émission vers userId:', notificationDto.recipientId);
         this.emit(notificationDto.recipientId, response);
       }),
     );
-    console.log(nats);
     return nats;
   }
 
   subscribe(userId: number): Observable<MessageEvent> {
     if (!this.subjects.has(userId)) {
-      console.log('Création Subject userId:', userId);
       this.subjects.set(userId, new Subject<MessageEvent>());
     }
     return this.subjects.get(userId).asObservable();

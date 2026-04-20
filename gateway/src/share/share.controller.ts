@@ -109,8 +109,6 @@ export class ShareController {
     }>
   > {
     const receivers = await this.shareService.getReceivers(req.user.sub);
-    console.log('🚀 ~ share.controller.ts:124 ~ ShareController ~ getReceivers ~ receivers:', receivers);
-
     return {
       data: { receivers },
       message: 'Users and groups list',

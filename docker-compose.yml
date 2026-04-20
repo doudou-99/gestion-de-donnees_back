@@ -81,15 +81,14 @@ services:
       - "3306:3306"
     volumes:
       - db-projet-data:/var/lib/mysql
-      - ./init-user.sql:/docker-entrypoint-initdb.d/init-user.sql    
+      - ./gateway/init-user.sql:/docker-entrypoint-initdb.d/init-user.sql    
     networks:
       - backend-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 30s
       retries: 10
-      start_period: 40s
 
   phpmyadmin:
     image: phpmyadmin
@@ -106,31 +105,6 @@ services:
         condition: service_healthy
     networks:
       - backend-network
-  gateway:
-    build:
-      context: ./gateway
-      dockerfile: /Dockerfile
-    container_name: gateway-api
-    env_file:
-      - ./gateway/.env
-    ports:
-      - "3000:3000"
-      - "9229:9229" 
-    volumes:
-      - ./gateway/src:/app/src
-      - ./gateway/prisma:/app/prisma
-      - ./gateway/init-db.sh:/app/init-db.sh 
-      - /app/node_modules
-    depends_on:
-      mysql:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-      notification-service:
-        condition: service_healthy
-    networks:
-      - microservices-network-dev
-    restart: unless-stopped
 
   notification-service:
     build:
@@ -139,8 +113,14 @@ services:
     container_name: notification
     ports:
       - "8082:8082"
-    env_file:
-      - ./notification/src/main/resources/application.properties 
+    volumes:
+      - ./notification/src/main/resources/application.properties:/app/config/application.properties
+      - ./notification/src/main/resources/application-prod.properties:/app/config/application-prod.properties
+    environment:
+      SPRING_CONFIG_LOCATION: file:/app/config/
+      SPRING_PROFILES_ACTIVE: prod
+      MAIL_USERNAME: notifications.ms.gestion@gmail.com
+      MAIL_PASSWORD: "pbps venz zjvv yccp"
     depends_on:
       mongo:
         condition: service_healthy
@@ -159,13 +139,17 @@ services:
     restart: unless-stopped
   backend:
     build:
-      context: .
+      context: ./gateway
       dockerfile: Dockerfile
     container_name: nestjs_api
     ports:
       - "3000:3000"
+      - "9229:9229" 
     env_file:
-      - ./.env.production
+      - ./gateway/.env.production
+    environment:
+      - MAIL_USERNAME=notifications.ms.gestion@gmail.com
+      - MAIL_PASSWORD=pbps venz zjvv yccp
     depends_on:
       mysql:
         condition: service_healthy

@@ -97,7 +97,6 @@ export class AuthService {
 
   async upsertToken(data: UpsertTokenDto): Promise<Token> {
     const { token, type, userId, ancienToken, expiresAt } = data;
-    console.log(ancienToken, token);
     if (ancienToken) {
       await this.prisma.token.deleteMany({
         where: { userId, type },

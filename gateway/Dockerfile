@@ -27,4 +27,4 @@ EXPOSE 3000
 EXPOSE 9229
 
 # Start in development mode (will be overridden by docker-compose command)
-CMD ["npm", "run", "start:dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:dev"]

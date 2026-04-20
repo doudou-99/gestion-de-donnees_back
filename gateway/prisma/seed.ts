@@ -37,19 +37,13 @@ const generatePassword = (): string => {
     ';',
   ]);
 
-  return faker.helpers
-    .shuffle(
-      (lower + upper + numbers + special + faker.string.alphanumeric(3)).split(
-        '',
-      ),
-    )
-    .join('');
+  return faker.helpers.shuffle((lower + upper + numbers + special + faker.string.alphanumeric(3)).split('')).join('');
 };
 
 const upsertData = async () => {
   const pass = generatePassword();
   const emailUser = faker.internet.email({ allowSpecialCharacters: true });
-  const user = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: emailUser,
       password: await argon2.hash(pass),
@@ -58,16 +52,6 @@ const upsertData = async () => {
       extraEmail: faker.internet.email({ allowSpecialCharacters: true }),
     },
   });
-  console.log(user, pass);
-  const groupName = faker.string.alphanumeric(5);
-
-  const group = await prisma.group.create({
-    data: {
-      name: groupName,
-      leaderId: user.id,
-    },
-  });
-  console.log(group);
 };
 
 const main = async (nbUser: number) => {

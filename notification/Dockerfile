@@ -7,7 +7,7 @@ COPY pom.xml .
 COPY src ./src
 
 # Build application
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -Pprod
 
 FROM eclipse-temurin:17-jre-alpine
 

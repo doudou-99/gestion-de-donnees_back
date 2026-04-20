@@ -171,7 +171,6 @@ export class AuthController {
     const hashedRefresh = await this.authService.hash(refreshToken);
     const upsertDto: UpsertTokenDto = { userId: user.id, token: hashedRefresh, type: 'REFRESHTOKEN' };
     if (tokenDB.token) upsertDto.ancienToken = tokenDB.token;
-    console.log('🚀 ~ auth.controller.ts:174 ~ AuthController ~ refresh ~ upsertDto:', upsertDto);
     await this.authService.upsertToken(upsertDto);
     this.authService.generateCookie(res, refreshToken, 'refreshToken');
     this.authService.generateCookie(res, 'sessionEvent1', 'sessionId');

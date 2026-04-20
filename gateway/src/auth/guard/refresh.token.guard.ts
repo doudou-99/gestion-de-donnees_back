@@ -8,12 +8,7 @@ export class RefreshTokenGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: RequestPayloadWithRefresh = context.switchToHttp().getRequest();
-
-    console.log('All cookies:', request.cookies);
-    console.log('Signed cookies:', request.signedCookies);
-
     const token = this.extractTokenFromCookie(request);
-    console.log(token);
     if (!token) throw new UnauthorizedException();
     try {
       const payload: PayloadInterface = await this.jwtService.verifyAsync(token, {
@@ -28,7 +23,6 @@ export class RefreshTokenGuard implements CanActivate {
   }
 
   private extractTokenFromCookie(request: Request): string | undefined {
-    console.log(request.cookies);
     const token = <string>request.cookies['refreshToken'] ?? undefined;
     return token;
   }

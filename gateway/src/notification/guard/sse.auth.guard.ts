@@ -9,7 +9,6 @@ export class SseAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: RequestPayload = context.switchToHttp().getRequest();
     const token = this.extractTokenFromCookie(request);
-    console.log(token);
     if (!token) {
       throw new UnauthorizedException();
     }
@@ -26,7 +25,6 @@ export class SseAuthGuard implements CanActivate {
   }
 
   private extractTokenFromCookie(request: Request): string | undefined {
-    console.log(request.cookies);
     const token = <string>request.cookies['sseToken'] ?? undefined;
     return token;
   }

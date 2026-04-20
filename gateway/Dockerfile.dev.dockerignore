@@ -11,3 +11,4 @@ README.md
 dist
 
 build
+prisma/migrations

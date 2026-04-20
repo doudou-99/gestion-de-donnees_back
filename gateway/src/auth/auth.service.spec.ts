@@ -154,7 +154,6 @@ describe('Testing AuthService', () => {
       prismaMock.token.upsert.mockResolvedValue(mockPrismaToken);
       const res = await authService.upsertToken(mockUserId, mockToken);
       prismaMock.token.findMany.mockResolvedValue([res]);
-      console.log(res);
       const result = await authService.findUniqueToken(mockUserId, mockToken);
       expect(result).toEqual(res);
       expect(prismaMock.token.upsert).toHaveBeenCalledTimes(1);
