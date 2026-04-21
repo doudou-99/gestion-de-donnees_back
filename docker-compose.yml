@@ -158,6 +158,7 @@ services:
     build:
       context: ../gestion-de-donnees_front
       dockerfile: Dockerfile
+    mem_limit: 4g
     container_name: react_app
     ports: 
       - "85:80"
