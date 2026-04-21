@@ -147,9 +147,6 @@ services:
       - "9229:9229" 
     env_file:
       - ./gateway/.env.production
-    environment:
-      - MAIL_USERNAME=notifications.ms.gestion@gmail.com
-      - MAIL_PASSWORD=pbps venz zjvv yccp
     depends_on:
       mysql:
         condition: service_healthy
