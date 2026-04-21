@@ -109,7 +109,7 @@ services:
   notification-service:
     build:
       context: ./notification
-      dockerfile: /Dockerfile
+      dockerfile: Dockerfile
     container_name: notification
     ports:
       - "8082:8082"
@@ -140,7 +140,7 @@ services:
   backend:
     build:
       context: ./gateway
-      dockerfile: /Dockerfile
+      dockerfile: Dockerfile
     container_name: nestjs_api
     ports:
       - "3000:3000"
