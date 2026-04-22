@@ -9,7 +9,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NotificationModule } from './notification/notification.module';
 import { validate } from 'class-validator';
 import { FileModule } from './file/file.module';
-import { MailModule } from './mail/mail.module';
 import { ShareModule } from './share/share.module';
 import { GroupModule } from './group/group.module';
 @Module({
@@ -17,7 +16,6 @@ import { GroupModule } from './group/group.module';
     UserModule,
     PrismaModule,
     AuthModule,
-    MailModule,
     FileModule,
     ConfigModule.forRoot({
       isGlobal: true,

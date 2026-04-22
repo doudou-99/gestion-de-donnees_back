@@ -6,13 +6,11 @@ import { AuthController } from './auth.controller';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NotificationModule } from '../notification/notification.module';
-import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     UserModule,
-    MailModule,
     NotificationModule,
     JwtModule.register({
       global: true,
