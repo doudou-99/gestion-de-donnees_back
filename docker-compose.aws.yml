@@ -116,7 +116,7 @@ services:
   backend:
     build:
       context: ./gateway
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.aws
     container_name: nestjs_api
     ports:
       - "3000:3000"
