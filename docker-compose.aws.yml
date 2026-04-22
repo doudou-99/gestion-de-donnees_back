@@ -1,0 +1,175 @@
+services: 
+  nats:
+    image: nats:alpine
+    restart: always
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test: wget http://localhost:8222/healthz -q -S -O -
+      start_period: 3s
+      retries: 3
+      timeout: 3s
+      interval: 14s
+    networks:
+      - backend-network
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/27017"]      
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - backend-network
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/notification_db?authSource=admin
+      ME_CONFIG_BASICAUTH_ENABLED: true
+      ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
+      ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - backend-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - backend-network
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - 8090:80
+    environment:
+      PMA_HOST: database-1.c3agsaymkxi0.eu-west-3.rds.amazonaws.com
+      PMA_USER: nestjs_user
+      PMA_PASSWORD: nestjs_password
+    networks:
+      - backend-network
+
+  notification-service:
+    build:
+      context: ./notification
+      dockerfile: Dockerfile
+    container_name: notification
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./notification/src/main/resources/application.properties:/app/config/application.properties
+      - ./notification/src/main/resources/application-prod.properties:/app/config/application-prod.properties
+    environment:
+      SPRING_CONFIG_LOCATION: file:/app/config/
+      SPRING_PROFILES_ACTIVE: prod
+      MAIL_USERNAME: notifications.ms.gestion@gmail.com
+      MAIL_PASSWORD: "pbps venz zjvv yccp"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+  backend:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: nestjs_api
+    ports:
+      - "3000:3000"
+      - "9229:9229" 
+    env_file:
+      - ./gateway/.env.production
+    depends_on:
+      phpmyadmin:
+        condition: service_healthy
+    networks:
+      - backend-network
+      - nginx-network
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ../gestion-de-donnees_front
+      dockerfile: Dockerfile
+    mem_limit: 4g
+    container_name: react_app
+    ports: 
+      - "85:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - nginx-network
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443' 
+      - '81:81'
+    environment:
+      DISABLE_IPV6: 'true'
+    networks:
+      - nginx-network
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+volumes:
+  mongodb-data:
+  redis-data:
+  data: 
+  letsencrypt:
+  db-projet-data:
+    driver: local
+  
+networks:
+  backend-network:
+    name: backend-network
+    driver: bridge
+  nginx-network:
+    name: nginx-network
