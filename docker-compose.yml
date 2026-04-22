@@ -145,6 +145,7 @@ services:
     ports:
       - "3000:3000"
       - "9229:9229" 
+    command: sh -c "./init-rds.sh && node dist/main.js"  # adjust start command
     env_file:
       - ./gateway/.env.production
     depends_on:
