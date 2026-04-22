@@ -8,4 +8,4 @@ RDS_DATABASE=gestion_file
 
 apk add mariadb mariadb-client
 
-mysql -h $RDS_HOST -P $RDS_PORT -u $RDS_USER -p $RDS_PASSWORD $RDS_DATABASE --ssl-mode=VERIFY_IDENTITY --ssl-ca=./global-bundle.pem < ./init-user.sql
+mysql -h $RDS_HOST -P $RDS_PORT -u $RDS_USER -p$RDS_PASSWORD $RDS_DATABASE --ssl-mode=VERIFY_IDENTITY --ssl-ca=./global-bundle.pem < ./init-user.sql
