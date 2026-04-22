@@ -123,9 +123,6 @@ services:
       - "9229:9229" 
     env_file:
       - ./gateway/.env.production
-    depends_on:
-      phpmyadmin:
-        condition: service_healthy
     networks:
       - backend-network
       - nginx-network
