@@ -78,7 +78,7 @@ services:
     environment:
       PMA_HOST: database-1.c3agsaymkxi0.eu-west-3.rds.amazonaws.com
       PMA_USER: nestjs_user
-      PMA_PASSWORD: nestjs_password
+      PMA_PASSWORD: root_password
     networks:
       - backend-network
 
