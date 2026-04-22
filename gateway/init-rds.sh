@@ -7,12 +7,12 @@ RDS_DATABASE=gestion_file
 
 export MYSQL_PWD="$RDS_PASSWORD"
 
-mysql \
+mariadb \
   -h "$RDS_HOST" \
   -P "$RDS_PORT" \
   -u "$RDS_USER" \
   "$RDS_DATABASE" \
-  --ssl-mode=REQUIRED \
+  --ssl \
   --ssl-ca=./global-bundle.pem \
   < ./init-user.sql
 #mysql -h $RDS_HOST -P $RDS_PORT -u $RDS_USER -p$RDS_PASSWORD $RDS_DATABASE --ssl-mode=VERIFY_IDENTITY --ssl-ca=./global-bundle.pem < ./init-user.sql
