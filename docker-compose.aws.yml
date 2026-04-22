@@ -122,7 +122,7 @@ services:
       - "3000:3000"
       - "9229:9229" 
     env_file:
-      - ./gateway/.env.production
+      - ./gateway/.env.production.aws
     networks:
       - backend-network
       - nginx-network
