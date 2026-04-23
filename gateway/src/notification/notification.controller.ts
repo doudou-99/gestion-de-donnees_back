@@ -1,19 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Header,
-  HttpCode,
-  HttpException,
-  HttpStatus,
-  MessageEvent,
-  Param,
-  Post,
-  Req,
-  Sse,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, MessageEvent, Param, Post, Req, Sse, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationRequest } from './dto/create.notification.request';
 import { timeout, catchError, throwError, interval, map, Observable, merge, delay, of, finalize } from 'rxjs';
@@ -39,8 +24,6 @@ export class NotificationController {
   }
 
   @Sse('events')
-  @Header('Access-Control-Allow-Origin', 'http://localhost:5173')
-  @Header('Access-Control-Allow-Credentials', 'true')
   @UseGuards(SseAuthGuard)
   events(@Req() req: RequestPayload): Observable<MessageEvent> {
     const initial = of({
